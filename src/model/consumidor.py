@@ -1,5 +1,7 @@
 from datetime import datetime
+
 from usuario import Usuario
+
 
 class Consumidor(usuario):
     def __init__(self, bloqueaAte: datetime, 
@@ -16,3 +18,5 @@ class Consumidor(usuario):
     @bloqueadoAte.setter
     def bloqueadoAte(self, bloqueadoAte: datetime):
         self._bloquadoAte = datetime
+
+# Feito por Gabriel
