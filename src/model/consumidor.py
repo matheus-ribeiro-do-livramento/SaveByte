@@ -6,7 +6,7 @@ from usuario import Usuario
 class Consumidor(usuario):
     def __init__(self, bloqueaAte: datetime, 
                  preferenciasAlimentares: list, 
-                 penalidade: int):
+                 penalidade: int, dataCadastro, email, id, localizacao, nome, senha):
         super().__init__(dataCadastro, email, id, localizacao, nome, senha)
         self._bloquadoAte: datetime
         self.preferenciasAlimentares: list

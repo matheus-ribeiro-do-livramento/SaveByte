@@ -1,5 +1,5 @@
-from src.model.enums import TipoEstabelecimento
-from src.model.localizacao import Localizacao
+from enums import TipoEstabelecimento
+from localizacao import Localizacao
 
 
 class Estabelecimento:

@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from src.model.enums import StatusReserva
-from src.model.token import Token
+from enums import StatusReserva
+from token import Token
 
 
 class Reserva:

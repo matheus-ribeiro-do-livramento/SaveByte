@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from src.model.enums import StatusOferta
+from enums import StatusOferta
 
 
 class OfertaRelampago:
