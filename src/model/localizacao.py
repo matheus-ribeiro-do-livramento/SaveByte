@@ -1,8 +1,8 @@
 class Localizacao:
-    def __init__(self, endereco: str, latitude: float, longitude: float):
+    def __init__(self, cidade: str, bairro: str, endereco: str):
         self._endereco = endereco
-        self._latitude = latitude
-        self._longitude = longitude
+        self._cidade = cidade
+        self._bairro = bairro
 
     @property
     def endereco(self):
@@ -13,19 +13,19 @@ class Localizacao:
         self._endereco = endereco
 
     @property
-    def latitude(self):
-        return self._latitude
+    def cidade(self):
+        return self._cidade
 
-    @latitude.setter
-    def latitude(self, latitude):
-        self._latitude = latitude
+    @cidade.setter
+    def latitude(self, cidade):
+        self._cidade = cidade
 
     @property
-    def longitude(self):
-        return self._longitude
+    def bairro(self):
+        return self._bairro
 
-    @longitude.setter
-    def longitude(self, longitude):
-        self._longitude = longitude
+    @bairro.setter
+    def bairro(self, bairro):
+        self._bairro = bairro 
 
 #Feito por Matheus
