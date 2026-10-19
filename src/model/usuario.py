@@ -1,15 +1,18 @@
 from abc import ABC
 from datetime import datetime
-from localizacao import Localizacao
+from model.localizacao import Localizacao
 
 
 class Usuario(ABC):
-    def __init__(self, id: int, nome: str, email: str, senha_hash: str,  endereco: str, latitude: float, longitude: float,   data_cadastro: datetime = None):
+    def __init__(self, id: int, nome: str, email: str, senha_hash: str, cidade: str, bairro: str, endereco: str, data_cadastro: datetime = None):
         self._id = id
         self._nome = nome
         self._email = email
         self._senha_hash = senha_hash
-        self._localizacao = Localizacao(endereco, latitude, longitude)
+        self._localizacao = Localizacao(cidade, bairro, endereco)
         self._data_cadastro = data_cadastro or datetime.now()
 
+    @property
+    def id(self):
+        return self._id
 #Feito por Matheus
