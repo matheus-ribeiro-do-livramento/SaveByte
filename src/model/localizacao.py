@@ -17,7 +17,7 @@ class Localizacao:
         return self._cidade
 
     @cidade.setter
-    def latitude(self, cidade):
+    def cidade(self, cidade):
         self._cidade = cidade
 
     @property
