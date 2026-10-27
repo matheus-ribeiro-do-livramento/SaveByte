@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from model.enums import StatusOferta
 
 
@@ -97,4 +97,21 @@ class OfertaRelampago:
     def status(self, status):
         self._status = status
 
-# Feito por Augusto
+    def decrementar_quantidade(self):
+        self._quantidade_disponivel -= 1
+        if self._quantidade_disponivel <= 0:
+            self._status = StatusOferta.ESGOTADA
+
+    # NOVO (não estava na UML): devolve a cesta ao estoque quando a reserva é cancelada
+    def incrementar_quantidade(self):
+        self._quantidade_disponivel += 1
+        if self._status == StatusOferta.ESGOTADA:
+            self._status = StatusOferta.DISPONIVEL
+
+    def validarJanelaRetirada (self):
+        tempo = self._janela_fim - self._janela_inicio
+
+        if(tempo >= timedelta(hours = 2, minutes = 30 )):
+            return True
+        else:
+            return False

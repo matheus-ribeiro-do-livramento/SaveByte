@@ -1,8 +1,15 @@
 from datetime import datetime, timedelta
 
 from view.tela_sistema import TelaSistema
+
 from controller.controlador_reserva import ControladorReservas
+from controller.controlador_estabelecimento import controladorEstabelecimento
+
 from model.consumidor import Consumidor
+from model.estabelecimento import Estabelecimento
+from model.oferta_relampago import OfertaRelampago
+from model.reserva import Reserva
+from model.enums import StatusReserva
 from model.localizacao import Localizacao
 
 
@@ -18,12 +25,21 @@ class ControladorSistema:
     localizacao=Localizacao("Florianópolis", "Centro", "Rua Teste, 100"),
     nome="Consumidor Teste",
     senha="123",)
-        self._controlador_reservas = ControladorReservas(self)
-        self._tela_sistema = TelaSistema()
+        self._estabelecimento_logado = None
+
+        self.controlador_estabelecimento = controladorEstabelecimento(self)
+        self.__controlador_reservas = ControladorReservas(self)
+
+        self.__tela_sistema = TelaSistema()
+        self.__carrega_dados_exemplo()
 
     @property
     def consumidor_logado(self):
         return self._consumidor_logado
+
+    @property
+    def estabelecimento_logado(self):
+        return self._estabelecimento_logado
 
     @property
     def controlador_reservas(self):
@@ -46,4 +62,16 @@ class ControladorSistema:
             if opcao_escolhida in lista_opcoes:
                 lista_opcoes[opcao_escolhida]()
             else:
-                print("Opção inválida")
+                print("Opcao invalida")
+
+
+    def cadastrar_estabelecimento (self):
+        self.controlador_estabelecimento.iniciarCadastro()
+
+
+    def logar_estabelecimento (self):
+        user = self.controlador_estabelecimento.iniciarLogin()
+
+        if user:
+            self._estabelecimento_logado = user
+

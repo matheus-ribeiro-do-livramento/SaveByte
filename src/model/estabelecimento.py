@@ -9,11 +9,16 @@ class Estabelecimento:
         endereco: str,
         nome_fantasia: str,
         tipo: TipoEstabelecimento,
+        senha: str,
+        email = str
+
     ):
         self._cnpj = cnpj
         self._endereco = endereco
         self._nome_fantasia = nome_fantasia
         self._tipo = tipo
+        self._senha = senha
+        self._email = email
 
     @property
     def cnpj(self):
@@ -46,6 +51,22 @@ class Estabelecimento:
     @tipo.setter
     def tipo(self, tipo):
         self._tipo = tipo
+
+    @property
+    def senha (self):
+        return self._senha
+
+    @senha.getter
+    def senha(self, senha):
+        self._senha =  senha
+
+    @property
+    def email (self):
+        return self._email
+
+    @email.getter
+    def email (self, email):
+        self._email = email
 
 
 # Feito por Augusto
