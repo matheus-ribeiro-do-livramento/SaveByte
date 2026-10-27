@@ -53,4 +53,6 @@ class controladorEstabelecimento ():
             if est.email == dados["email"] and est.senha == dados["senha"]:
                 return est
         return None
+
+# Feito por Gabriel
         
