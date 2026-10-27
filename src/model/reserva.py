@@ -14,7 +14,7 @@ class Reserva:
         self._data_hora_limite_retirada = data_hora_limite_retirada
         self._data_hora_reserva = data_hora_reserva or datetime.now()
         self._status = StatusReserva.PENDENTE
-        self._token = self.gerar_token()  # RF09: token gerado na criação da reserva
+        self._token = self.gerar_token() 
 
     @property
     def id(self):
@@ -54,11 +54,11 @@ class Reserva:
     def esta_pendente(self):
         return self._status == StatusReserva.PENDENTE
 
-    # RN07: cancelar com no mínimo 1 hora de antecedência do horário final de retirada
     def esta_dentro_do_prazo_de_cancelamento(self):
         limite_para_cancelar = self._data_hora_limite_retirada - timedelta(hours=1)
         return datetime.now() <= limite_para_cancelar
 
     def cancelar(self):
         self._status = StatusReserva.CANCELADA
-        self._oferta.incrementar_quantidade()
+
+# Feito por Augusto

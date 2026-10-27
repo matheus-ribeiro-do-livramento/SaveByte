@@ -4,7 +4,6 @@ from datetime import datetime
 
 class Token:
     def __init__(self):
-        # RN01 / RNF07: 6 caracteres hexadecimais gerados com a biblioteca secrets
         self._codigo = secrets.token_hex(3)
         self._data_geracao = datetime.now()
         self._usado = False
@@ -27,3 +26,5 @@ class Token:
 
     def validar(self, codigo_informado: str):
         return (not self._usado) and self._codigo == codigo_informado.strip().lower()
+
+# Feito por Augusto

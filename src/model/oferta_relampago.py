@@ -3,8 +3,6 @@ from model.enums import StatusOferta
 
 
 class OfertaRelampago:
-    # nome_estabelecimento é provisório: quando o Estabelecimento for integrado,
-    # troque por uma referência ao objeto Estabelecimento (como está na UML).
     def __init__(self, id: int, titulo: str, descricao: str, nome_estabelecimento: str,
                  preco_original: float, preco_com_desconto: float, quantidade_disponivel: int,
                  janela_inicio: datetime, janela_fim: datetime):
@@ -76,6 +74,22 @@ class OfertaRelampago:
         self._quantidade_disponivel = quantidade_disponivel
 
     @property
+    def janela_inicio(self):
+        return self._janela_inicio
+
+    @janela_inicio.setter
+    def janela_inicio(self, janela_inicio):
+        self._janela_inicio = janela_inicio
+
+    @property
+    def janela_fim(self):
+        return self._janela_fim
+
+    @janela_fim.setter
+    def janela_fim(self, janela_fim):
+        self._janela_fim = janela_fim
+
+    @property
     def status(self):
         return self._status    
 
@@ -83,13 +97,4 @@ class OfertaRelampago:
     def status(self, status):
         self._status = status
 
-    def decrementar_quantidade(self):
-        self._quantidade_disponivel -= 1
-        if self._quantidade_disponivel <= 0:
-            self._status = StatusOferta.ESGOTADA
-
-    # NOVO (não estava na UML): devolve a cesta ao estoque quando a reserva é cancelada
-    def incrementar_quantidade(self):
-        self._quantidade_disponivel += 1
-        if self._status == StatusOferta.ESGOTADA:
-            self._status = StatusOferta.DISPONIVEL
+# Feito por Augusto
