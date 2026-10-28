@@ -30,3 +30,27 @@ class TelaEstabelecimento():
     def mensagem(self, msg):
         print(msg)
 
+    def cadastro_ou_login(self):
+        print("\n-------- SaveByte ---------")
+        print("Escolha sua opção:")
+        print("1 - Cadastrar Estabelecimento")
+        print("2 - Login de Estabelecimento")
+        print("0 - Retornar")
+        while True:
+            try:
+                return int(input("Escolha a opção: "))
+            except ValueError:
+                print("Valor inválido, digite um número inteiro.")
+
+    def menu_gerenciar_ofertas(self):
+            print('\n--- Gerenciar Ofertas Relâmpago ---')
+            print('1 - Criar nova oferta')
+            print('2 - Visualizar minhas ofertas')
+            print('3 - Atualizar uma oferta')
+            print('4 - Excluir uma oferta')
+            print('0 - Deslogar e Voltar ao menu principal')
+            while True:
+                try:
+                    return int(input("Escolha a opção: "))
+                except ValueError:
+                    print("Valor inválido, digite um número inteiro.")

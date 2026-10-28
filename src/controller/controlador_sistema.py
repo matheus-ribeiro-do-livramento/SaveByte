@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from view.tela_sistema import TelaSistema
 
+from controller.controlador_consumidor import ControladorConsumidor
 from controller.controlador_reserva import ControladorReservas
 from controller.controlador_estabelecimento import ControladorEstabelecimento
 from controller.controlador_oferta_relampago import ControladorOfertaRelampago
@@ -15,19 +16,9 @@ from model.localizacao import Localizacao
 class ControladorSistema:
 
     def __init__(self):
-        self._consumidor_logado = Consumidor(
-            bloqueadoAte=None,
-            preferenciasAlimentares=[],
-            penalidade=0,
-            dataCadastro=datetime.now(),
-            email="teste@email.com",
-            id=1,
-            localizacao=Localizacao("Florianópolis", "Centro", "Rua Teste, 100"),
-            nome="Consumidor Teste",
-            senha="123"
-        )
+        self._consumidor_logado = None
         self._estabelecimento_logado = None
-
+        self._controlador_consumidor = ControladorConsumidor(self)
         self._controlador_estabelecimento = ControladorEstabelecimento(self)
         self._controlador_oferta = ControladorOfertaRelampago(self)
         self._controlador_reservas = ControladorReservas(self)
@@ -47,7 +38,13 @@ class ControladorSistema:
     def controlador_reservas(self):
         return self._controlador_reservas
 
+    def definir_consumidor_logado(self, consumidor):
+        self._consumidor_logado = consumidor
+
     def _carrega_dados_exemplo(self):
+        if self._consumidor_logado is None:
+            return
+
         agora = datetime.now()
         c = self._consumidor_logado
 
@@ -82,43 +79,23 @@ class ControladorSistema:
             self._estabelecimento_logado = user
             self.abrir_gerenciador_ofertas() 
 
-    def abrir_gerenciador_ofertas(self):
-        if not self._estabelecimento_logado:
-            print("\nErro: Você precisa fazer login como estabelecimento primeiro.")
-            return
+    def consumidor(self):
+        self._controlador_consumidor.abre_tela_cadastro_ou_login()
 
-        opcoes_oferta = {
-            1: self._controlador_oferta.criarOferta,
-            2: self._controlador_oferta.listarOferta,
-            3: self._controlador_oferta.atualizarOferta,
-            4: self._controlador_oferta.excluirOferta
-        }
-
-        while True:
-            opcao = self._tela_sistema.menu_gerenciar_ofertas()
-            if opcao == 0:
-                self._estabelecimento_logado = None 
-                print("\nLogout do estabelecimento efetuado.")
-                break
-            elif opcao in opcoes_oferta:
-                opcoes_oferta[opcao]()
-            else:
-                print("Opção inválida.")
+    def estabelecimento(self):
+        self._controlador_estabelecimento.abre_tela_cadastro_ou_login()
 
     def encerra_sistema(self):
         exit(0)
 
     def abre_tela(self):
         lista_opcoes = {
-            1: self.minhas_reservas,
-            2: self.cadastrar_estabelecimento,
-            3: self.logar_estabelecimento,
-            4: self.abrir_gerenciador_ofertas,
+            1: self.consumidor,
+            2: self.estabelecimento,
             0: self.encerra_sistema
         }
-
         while True:
-            opcao_escolhida = self._tela_sistema.tela_opcoes()
+            opcao_escolhida = self._tela_sistema.estabelecimento_ou_consumidor()
             if opcao_escolhida in lista_opcoes:
                 lista_opcoes[opcao_escolhida]()
             else:

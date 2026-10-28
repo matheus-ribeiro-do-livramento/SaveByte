@@ -16,9 +16,17 @@ class Usuario(ABC):
     def id(self):
         return self._id
 
-    @id.setter
-    def id(self, id: int):
-        self._id = id
+    @property
+    def nome(self):
+        return self._nome
+
+    @property
+    def email(self):
+        return self._email
+
+    @property
+    def senha(self):
+        return self._senha_hash
 
 
 #Feito por Matheus
