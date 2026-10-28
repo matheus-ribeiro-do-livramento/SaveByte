@@ -43,7 +43,7 @@ class ControladorEstabelecimento ():
 
         if estabelecimento_logado:
             self.__tela_estabelecimento.mensagem(f'\n Login efetuado com sucesso! \n Bem vindo, {estabelecimento_logado.nome_fantasia}')
-            self.abrir_gerenciador_ofertas()
+            return estabelecimento_logado
         else:
             self.__tela_estabelecimento.mensagem('Erro: e-mail ou senha invalidos')
 
@@ -59,7 +59,10 @@ class ControladorEstabelecimento ():
         return None
 
     def abre_tela_cadastro_ou_login(self):
-        lista_opcoes = {1: self.iniciarCadastro, 2: self.iniciarLogin, 0: self.retornar}
+        lista_opcoes = {1: self.iniciarCadastro, 
+                        2: self.__controlador_sistema.logar_estabelecimento, 
+                        0: self.retornar}
+        
         self._continua = True
         while self._continua:
             opcao = self.__tela_estabelecimento.cadastro_ou_login()

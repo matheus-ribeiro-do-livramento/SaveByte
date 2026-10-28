@@ -7,11 +7,11 @@ class TelaOfertaRelampago():
         print('\nDigite o titulo da oferta')
         titulo = input()
         print('Digite a descrição da oferta \n (Descreva quais os produtos virão)')
-        desc = input()
+        descricao = input()
         print('Digite qual seria o preço total dos produtos')
-        preco_org = float(input())
+        original = float(input())
         print('\nDigite o preço com desconto (Preço que será vendido)')
-        preco_desc = float(input())
+        desconto = float(input())
         print('Digite quantas ofertas estão disponiveis ')
         quantidade = int(input())
         print('Digite a a hora de inicio para a retirada (Formato de HH:MM ex: 14:00)')
@@ -23,9 +23,9 @@ class TelaOfertaRelampago():
 
         return {"id": id, 
                 "titulo": titulo,
-                "desc": desc,
-                "original": preco_org,
-                "desconto": preco_desc,
+                "descricao": descricao,
+                "original": original,
+                "desconto": desconto,
                 "quantidade": quantidade,
                 "inicio": inicio,
                 "fim": fim}
@@ -41,7 +41,7 @@ class TelaOfertaRelampago():
             return False
 
         for of in ofertas:
-            print(f'ID: {of.id} | Titulo: {of.titulo} |\n Desconto: R${of.desconto} | Quantidade: {of.quantidade}')
+            print(f'ID: {of.id} | Titulo: {of.titulo}\n| Descrição: {of.descricao}| Desconto: R${of.desconto}\n| Quantidade: {of.quantidade}')
             return True
 
     from datetime import datetime
@@ -55,24 +55,24 @@ class TelaOfertaRelampago():
         if not titulo:
             titulo = oferta.titulo
 
-        print(f'Descrição atual [{oferta.desc}]:')
-        desc = input().strip()
-        if not desc:
-            desc = oferta.desc
+        print(f'Descrição atual [{oferta.descricao}]:')
+        descricao = input().strip()
+        if not descricao:
+            descricao = oferta.descricao
 
         print(f'Preço original atual [R$ {oferta.original}]:')
         preco_org_str = input().strip()
         if not preco_org_str:
-            preco_org = oferta.original
+            original = oferta.original
         else:
-            preco_org = float(preco_org_str)
+            original = float(preco_org_str)
 
         print(f'Preço com desconto atual [R$ {oferta.desconto}]:')
         preco_desc_str = input().strip()
         if not preco_desc_str:
-            preco_desc = oferta.desconto
+            desconto = oferta.desconto
         else:
-            preco_desc = float(preco_desc_str)
+            desconto = float(preco_desc_str)
 
         print(f'Quantidade disponível atual [{oferta.quantidade}]:')
         quantidade_str = input().strip()
@@ -99,18 +99,18 @@ class TelaOfertaRelampago():
 
         return {
             "titulo": titulo,
-            "desc": desc,
-            "original": preco_org,
-            "desconto": preco_desc,
+            "descricao": descricao,
+            "original": original,
+            "desconto": desconto,
             "quantidade": quantidade,
             "inicio": inicio,
             "fim": fim
         }    
 
     def confimarExclusão(self, oferta):
-         self.exibirOfertas(oferta)
+         self.exibirOfertas([oferta])
          print('\nTem certeza da exclusão (S/N):')
-         resposta = input().strip.upper()
+         resposta = input().strip().upper()
          return resposta
          
          

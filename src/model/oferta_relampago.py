@@ -4,17 +4,17 @@ from model.enums import StatusOferta
 
 class OfertaRelampago:
     def __init__(self, id: int, titulo: str, descricao: str, nome_estabelecimento: str,
-                 preco_original: float, preco_com_desconto: float, quantidade_disponivel: int,
+                 original: float, desconto: float, quantidade: int,
                  janela_inicio: datetime, janela_fim: datetime):
         self._id = id
         self._titulo = titulo
         self._descricao = descricao
         self._nome_estabelecimento = nome_estabelecimento
-        self._preco_original = preco_original
-        self._preco_com_desconto = preco_com_desconto
-        self._quantidade_disponivel = quantidade_disponivel
-        self._janela_inicio = janela_inicio
-        self._janela_fim = janela_fim
+        self._original = original
+        self._desconto = desconto
+        self._quantidade = quantidade
+        self._inicio = janela_inicio
+        self._fim = janela_fim
         self._status = StatusOferta.DISPONIVEL
 
     @property
@@ -50,44 +50,44 @@ class OfertaRelampago:
         self._nome_estabelecimento = nome_estabelecimento
 
     @property
-    def preco_original(self):
-        return self._preco_original
+    def original(self):
+        return self._original
 
-    @preco_original.setter
-    def preco_original(self, preco_original):
-        self._preco_original = preco_original
-
-    @property
-    def preco_com_desconto(self):
-        return self._preco_com_desconto
-
-    @preco_com_desconto.setter
-    def preco_com_desconto(self, preco_com_desconto):
-        self._preco_com_desconto = preco_com_desconto
+    @original.setter
+    def original(self, original):
+        self._original = original
 
     @property
-    def quantidade_disponivel(self):
-        return self._quantidade_disponivel
+    def desconto(self):
+        return self._desconto
 
-    @quantidade_disponivel.setter
-    def quantidade_disponivel(self, quantidade_disponivel):
-        self._quantidade_disponivel = quantidade_disponivel
-
-    @property
-    def janela_inicio(self):
-        return self._janela_inicio
-
-    @janela_inicio.setter
-    def janela_inicio(self, janela_inicio):
-        self._janela_inicio = janela_inicio
+    @desconto.setter
+    def desconto(self, desconto):
+        self._desconto = desconto
 
     @property
-    def janela_fim(self):
-        return self._janela_fim
+    def quantidade(self):
+        return self._quantidade
 
-    @janela_fim.setter
-    def janela_fim(self, janela_fim):
-        self._janela_fim = janela_fim
+    @quantidade.setter
+    def quantidade(self, quantidade):
+        self._quantidade = quantidade
+
+    @property
+    def inicio(self):
+        return self._inicio
+
+    @inicio.setter
+    def inicio (self, inicio):
+        self._inicio = inicio
+
+    @property
+    def fim (self):
+        return self._fim
+
+    @fim.setter
+    def fim(self, fim):
+        self._fim = fim
 
     @property
     def status(self):
@@ -98,18 +98,18 @@ class OfertaRelampago:
         self._status = status
 
     def decrementar_quantidade(self):
-        self._quantidade_disponivel -= 1
-        if self._quantidade_disponivel <= 0:
+        self._quantidade -= 1
+        if self._quantidade <= 0:
             self._status = StatusOferta.ESGOTADA
 
     # NOVO (não estava na UML): devolve a cesta ao estoque quando a reserva é cancelada
     def incrementar_quantidade(self):
-        self._quantidade_disponivel += 1
+        self._quantidade += 1
         if self._status == StatusOferta.ESGOTADA:
             self._status = StatusOferta.DISPONIVEL
 
     def validarJanelaRetirada (self):
-        tempo = self._janela_fim - self._janela_inicio
+        tempo = self._fim - self._inicio
 
         if(tempo >= timedelta(hours = 2, minutes = 30 )):
             return True
