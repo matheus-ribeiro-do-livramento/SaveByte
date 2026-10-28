@@ -29,6 +29,7 @@ class ControladorConsumidor:
         return True
 
     def iniciar_cadastro(self):
+        
         dados = self._tela_consumidor.cadastro_consumidor()
         if self.cadastrar_consumidor(dados):
             self._tela_consumidor.mensagem("Cadastro efetuado com sucesso!")
