@@ -22,6 +22,13 @@ class ControladorReservas():
                 return reserva
         return None
 
+    def verificar_reserva(self, id):
+        for r in self._reservas:
+            if r.id == id:
+                return True
+            else:
+                return False
+
     def _dados_reserva(self, reserva):
         oferta = reserva.oferta
         return {"id": reserva.id,

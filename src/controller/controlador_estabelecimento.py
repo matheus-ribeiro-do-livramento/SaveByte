@@ -1,7 +1,7 @@
 from view.tela_estabelecimento import TelaEstabelecimento
 from model.estabelecimento import Estabelecimento
 
-class controladorEstabelecimento ():
+class ControladorEstabelecimento ():
 
     def __init__(self, controlador_sistema):
         self.__estabelecimentos = []
@@ -40,7 +40,7 @@ class controladorEstabelecimento ():
         estabelecimento_logado = self.realizarLogin(dados)
 
         if estabelecimento_logado:
-            self.__tela_estabelecimento.mensagem(f'\n Login efetuado com sucesso! \n Bem vindo, {estabelecimento_logado.nome}')
+            self.__tela_estabelecimento.mensagem(f'\n Login efetuado com sucesso! \n Bem vindo, {estabelecimento_logado.nome_fantasia}')
 
             return estabelecimento_logado
         else:

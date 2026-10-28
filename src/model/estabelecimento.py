@@ -10,7 +10,7 @@ class Estabelecimento:
         nome_fantasia: str,
         tipo: TipoEstabelecimento,
         senha: str,
-        email = str
+        email: str
 
     ):
         self._cnpj = cnpj
@@ -56,7 +56,7 @@ class Estabelecimento:
     def senha (self):
         return self._senha
 
-    @senha.getter
+    @senha.setter
     def senha(self, senha):
         self._senha =  senha
 
@@ -64,7 +64,7 @@ class Estabelecimento:
     def email (self):
         return self._email
 
-    @email.getter
+    @email.setter
     def email (self, email):
         self._email = email
 
