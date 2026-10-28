@@ -14,7 +14,7 @@ class ControladorOfertaRelampago():
 
         oferta = OfertaRelampago(dados["id"],
                                  dados["titulo"],
-                                 dados["desc"],
+                                 dados["descricao"],
                                  user.nome_fantasia,
                                  dados["original"],
                                  dados["desconto"],
@@ -99,7 +99,7 @@ class ControladorOfertaRelampago():
         fim_org = oferta.fim
 
         oferta.titulo = ofertaAtualizada["titulo"]
-        oferta.descricao = ofertaAtualizada["desc"]
+        oferta.descricao = ofertaAtualizada["descricao"]
         oferta.original = ofertaAtualizada["original"]
         oferta.desconto = ofertaAtualizada["desconto"]
         oferta.quantidade = ofertaAtualizada["quantidade"]

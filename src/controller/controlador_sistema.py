@@ -77,7 +77,7 @@ class ControladorSistema:
         user = self._controlador_estabelecimento.iniciarLogin()
         if user:
             self._estabelecimento_logado = user
-            self.abrir_gerenciador_ofertas() 
+            self._controlador_estabelecimento.abrir_gerenciador_ofertas()
 
     def consumidor(self):
         self._controlador_consumidor.abre_tela_cadastro_ou_login()
