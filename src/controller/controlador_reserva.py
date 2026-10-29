@@ -86,6 +86,13 @@ class ControladorReservas():
     def retornar(self):
         self._continua = False
 
+    def iniciar_validacao_resgate(self):
+        # Feito por Augusto
+        
+        tela = TelaResgate()
+        codigo = tela.solicitar_token()
+        self.validar_resgate(codigo)
+
     def abre_tela(self):
         lista_opcoes = {1: self.lista_reservas, 2: self.consultar_reserva, 0: self.retornar}
 
@@ -97,14 +104,27 @@ class ControladorReservas():
             else:
                 self._tela_reserva.mostra_mensagem("Opcao invalida")
 
-    def validar_resgate(self, codigo: str, id_reserva: int):
+    def validar_resgate(self, codigo: str):
         # Feito por Augusto
+
         tela = TelaResgate()
 
-        reserva = self.pega_reserva_por_id(id_reserva)
+        estabelecimento = self._controlador_sistema.estabelecimento_logado
+        reserva = next(
+            (
+                reserva
+                for reserva in self._reservas
+                if estabelecimento is not None
+                and reserva.oferta.nome_estabelecimento == estabelecimento.nome_fantasia
+                and reserva.token.codigo == codigo
+            ),
+            None,
+        )
 
         if reserva is None:
-            tela.mostra_mensagem("Atenção: Reserva não localizada no sistema.")
+            tela.mostra_mensagem(
+                "Atenção: Reserva não localizada ou não pertence a este estabelecimento."
+            )
             return
 
         if reserva.confirmarRetirada(codigo):

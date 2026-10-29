@@ -83,7 +83,8 @@ class ControladorEstabelecimento ():
                 1: self.__controlador_sistema._controlador_oferta.criarOferta,
                 2: self.__controlador_sistema._controlador_oferta.listarOferta,
                 3: self.__controlador_sistema._controlador_oferta.atualizarOferta,
-                4: self.__controlador_sistema._controlador_oferta.excluirOferta
+                4: self.__controlador_sistema._controlador_oferta.excluirOferta,
+                5: self.__controlador_sistema.controlador_reservas.iniciar_validacao_resgate,
             }
     
             while True:

@@ -48,6 +48,7 @@ class TelaEstabelecimento():
             print('2 - Visualizar minhas ofertas')
             print('3 - Atualizar uma oferta')
             print('4 - Excluir uma oferta')
+            print('5 - Validar resgate de uma reserva')
             print('0 - Deslogar e Voltar ao menu principal')
             while True:
                 try:
