@@ -78,3 +78,5 @@ class ControladorConsumidor:
                 lista_opcoes[opcao]()
             else:
                 self._tela_consumidor.mensagem("Opção inválida.")
+
+#Feito por matheus

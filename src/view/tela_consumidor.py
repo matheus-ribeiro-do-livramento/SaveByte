@@ -51,3 +51,5 @@ class TelaConsumidor:
             if valor.strip():
                 return valor
             print("Campo obrigatório! Por favor, digite um valor válido.")
+
+#Feito por matheus
