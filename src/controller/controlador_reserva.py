@@ -37,8 +37,8 @@ class ControladorReservas():
                 "titulo": oferta.titulo,
                 "descricao": oferta.descricao,
                 "estabelecimento": oferta.nome_estabelecimento,
-                "preco": oferta.preco_com_desconto,
-                "preco_original": oferta.preco_original,
+                "preco": oferta.desconto,
+                "preco_original": oferta.original,
                 "data_reserva": reserva.data_hora_reserva,
                 "limite_retirada": reserva.data_hora_limite_retirada}
 

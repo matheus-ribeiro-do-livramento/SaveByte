@@ -60,7 +60,7 @@ class ControladorEstabelecimento ():
 
     def abre_tela_cadastro_ou_login(self):
         lista_opcoes = {1: self.iniciarCadastro, 
-                        2: self.__controlador_sistema.logar_estabelecimento, 
+                        2: self.logar_estabelecimento, 
                         0: self.retornar}
         
         self._continua = True
@@ -70,6 +70,12 @@ class ControladorEstabelecimento ():
                 lista_opcoes[opcao]()
             else:
                 print("Opção inválida")
+
+    def logar_estabelecimento(self):
+        user = self.iniciarLogin()
+        if user:
+            self.__controlador_sistema.definir_estabelecimento_logado(user)
+            self.abrir_gerenciador_ofertas()
 
     def abrir_gerenciador_ofertas(self):
             

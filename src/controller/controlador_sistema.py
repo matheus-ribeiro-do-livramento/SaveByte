@@ -41,6 +41,9 @@ class ControladorSistema:
     def definir_consumidor_logado(self, consumidor):
         self._consumidor_logado = consumidor
 
+    def definir_estabelecimento_logado(self, estabelecimento):
+        self._estabelecimento_logado = estabelecimento
+
     def _carrega_dados_exemplo(self):
         if self._consumidor_logado is None:
             return
@@ -48,36 +51,70 @@ class ControladorSistema:
         agora = datetime.now()
         c = self._consumidor_logado
 
-        def oferta(id, titulo, estab, original, desconto):
-            return OfertaRelampago(id, titulo, "Cesta surpresa do dia", estab, original, desconto,
-                                   5, agora - timedelta(hours=3), agora + timedelta(hours=6))
+        limite_r1 = agora + timedelta(hours=5)
+        r1 = Reserva(1, c, OfertaRelampago(1, 
+                                     "Cesta de paes", 
+                                     'Cesta surpresa do dia',
+                                     "Padaria Sol", 
+                                     30.0, 
+                                     10.0, 
+                                     5, 
+                                     agora - timedelta(hours=3), 
+                                     limite_r1),limite_r1)
 
-        r1 = Reserva(1, c, oferta(1, "Cesta de paes", "Padaria Sol", 30.0, 10.0), agora + timedelta(hours=5))
-        r2 = Reserva(2, c, oferta(2, "Marmita do dia", "Restaurante Bom Prato", 35.0, 15.0), agora + timedelta(minutes=30))
-        r3 = Reserva(3, c, oferta(3, "Cesta de frutas", "Mercado Verde", 25.0, 9.0), agora - timedelta(days=1))
+        limite_r2 = agora + timedelta(minutes=30)
+        r2 = Reserva(2, c, OfertaRelampago(2, 
+                                    "Marmita do dia", 
+                                    'cesta surpresa do dia', 
+                                    "Restaurante Bom Prato",
+                                    35.0, 
+                                    15.0, 
+                                    5,
+                                    agora - timedelta(hours=3),
+                                    limite_r2),limite_r2)
+
+        limite_r3 = agora - timedelta(days=1)
+        r3 = Reserva(3, c, OfertaRelampago(3, 
+                                     "Cesta de frutas", 
+                                     'cesta surpresa do dia', 
+                                     "Mercado Verde", 
+                                     25.0, 
+                                     9.0, 
+                                     5,
+                                     limite_r3 - timedelta(hours=3), 
+                                     limite_r3), limite_r3, data_hora_reserva=agora - timedelta(days=2))
         r3.status = StatusReserva.RETIRADA
-        r4 = Reserva(4, c, oferta(4, "Cesta de salgados", "Padaria Sol", 20.0, 8.0), agora - timedelta(days=2))
+
+        limite_r4 = agora - timedelta(days=2)
+        r4 = Reserva(4, c, OfertaRelampago(4, 
+                                     "Cesta de salgados", 
+                                     'cesta surpresa do dia', 
+                                     "Padaria Sol", 
+                                     20.0, 
+                                     8.0, 
+                                     5,
+                                     limite_r4 - timedelta(hours=3), 
+                                     limite_r4), limite_r4, data_hora_reserva=agora - timedelta(days=3))
         r4.status = StatusReserva.EXPIRADA
-        r5 = Reserva(5, c, oferta(5, "Torta", "Padaria Sol", 40.0, 18.0), agora - timedelta(days=3))
+
+        limite_r5 = agora - timedelta(days=3)
+        r5 = Reserva(5, c, OfertaRelampago(5, 
+                                     "Torta", 
+                                     'cesta surpresa do dia', 
+                                     "Padaria Sol", 
+                                     40.0, 
+                                     18.0, 
+                                     5,
+                                     limite_r5 - timedelta(hours=3), 
+                                     limite_r5), limite_r5,data_hora_reserva=agora - timedelta(days=4))
         r5.status = StatusReserva.CANCELADA
 
         for reserva in [r1, r2, r3, r4, r5]:
             self._controlador_reservas.adicionar_reserva(reserva)
+            
 
     def inicializa_sistema(self):
         self.abre_tela()
-
-    def minhas_reservas(self):
-        self._controlador_reservas.abre_tela()
-
-    def cadastrar_estabelecimento(self):
-        self._controlador_estabelecimento.iniciarCadastro()
-
-    def logar_estabelecimento(self):
-        user = self._controlador_estabelecimento.iniciarLogin()
-        if user:
-            self._estabelecimento_logado = user
-            self._controlador_estabelecimento.abrir_gerenciador_ofertas()
 
     def consumidor(self):
         self._controlador_consumidor.abre_tela_cadastro_ou_login()
