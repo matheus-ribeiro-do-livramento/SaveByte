@@ -22,6 +22,7 @@ class ControladorSistema:
         self._controlador_estabelecimento = ControladorEstabelecimento(self)
         self._controlador_oferta = ControladorOfertaRelampago(self)
         self._controlador_reservas = ControladorReservas(self)
+        self._consumidores_com_dados_exemplo = set()
 
         self._tela_sistema = TelaSistema()
         self._carrega_dados_exemplo()
@@ -46,6 +47,9 @@ class ControladorSistema:
 
     def _carrega_dados_exemplo(self):
         if self._consumidor_logado is None:
+            return
+
+        if self._consumidor_logado.id in self._consumidores_com_dados_exemplo:
             return
 
         agora = datetime.now()
@@ -111,6 +115,8 @@ class ControladorSistema:
 
         for reserva in [r1, r2, r3, r4, r5]:
             self._controlador_reservas.adicionar_reserva(reserva)
+
+        self._consumidores_com_dados_exemplo.add(c.id)
             
 
     def inicializa_sistema(self):
