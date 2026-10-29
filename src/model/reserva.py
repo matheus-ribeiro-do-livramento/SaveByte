@@ -61,6 +61,21 @@ class Reserva:
     def cancelar(self):
         self._status = StatusReserva.CANCELADA
 
-# Feito por Augusto
+    def confirmarRetirada(self, codigoInformado: str) -> bool:
+        # Feito por Augusto
+        
+        # Por lógica, se o status não estiver 'PENDENTE', isso significa que a reserva não pode ser confirmada, por estar em outro status.
+        if self.status != StatusReserva.PENDENTE:
+            return False
 
-#Função feito por Matheus
+        if datetime.now() > self.data_hora_limite_retirada:
+            self.status = StatusReserva.EXPIRADA
+            return False
+
+        if self.token.validar(codigoInformado):
+            self.status = StatusReserva.RETIRADA
+            return True
+        return False
+
+
+# Função feito por Matheus

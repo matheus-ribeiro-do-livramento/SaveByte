@@ -24,7 +24,11 @@ class Token:
     def usado(self, usado: bool):
         self._usado = usado
 
-    def validar(self, codigo_informado: str):
-        return (not self._usado) and self._codigo == codigo_informado.strip().lower()
+    def validar(self, codigoInformado: str) -> bool:
+        if self.codigo == codigoInformado and not self.usado:
+            self.usado = True
+            return True
+        return False
+
 
 # Feito por Augusto

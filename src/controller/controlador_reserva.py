@@ -1,3 +1,4 @@
+from view.tela_resgate import TelaResgate
 from view.tela_reserva import TelaReserva
 
 
@@ -96,4 +97,20 @@ class ControladorReservas():
             else:
                 self._tela_reserva.mostra_mensagem("Opcao invalida")
 
-#feito por matheus
+    def validar_resgate(self, codigo: str, id_reserva: int):
+        # Feito por Augusto
+        tela = TelaResgate()
+
+        reserva = self.pega_reserva_por_id(id_reserva)
+
+        if reserva is None:
+            tela.mostra_mensagem("Atenção: Reserva não localizada no sistema.")
+            return
+
+        if reserva.confirmarRetirada(codigo):
+            tela.mostra_mensagem("Resgate validado com sucesso!")
+        else:
+            tela.mostra_mensagem("Erro: Token inválido ou expirado.")
+
+
+# feito por matheus
