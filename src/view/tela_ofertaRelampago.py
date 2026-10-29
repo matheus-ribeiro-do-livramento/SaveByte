@@ -44,7 +44,6 @@ class TelaOfertaRelampago():
             print(f'ID: {of.id} | Titulo: {of.titulo}\n| Descrição: {of.descricao}| Desconto: R${of.desconto}\n| Quantidade: {of.quantidade}')
             return True
 
-    from datetime import datetime
 
     def exibirCamposOferta(self, oferta):
         print('\n----- Campos Atualizáveis -----')
@@ -116,4 +115,5 @@ class TelaOfertaRelampago():
          
     def mensagem (self, msg):
         print(msg)
-    
+
+# Feito por Gabriel

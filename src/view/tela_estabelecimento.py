@@ -55,3 +55,5 @@ class TelaEstabelecimento():
                     return int(input("Escolha a opção: "))
                 except ValueError:
                     print("Valor inválido, digite um número inteiro.")
+
+#Feito por Gabriel
