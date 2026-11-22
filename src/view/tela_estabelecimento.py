@@ -1,59 +1,125 @@
-class TelaEstabelecimento():
+# view/tela_estabelecimento.py
+import FreeSimpleGUI as sg
+from view.tema_savebyte import (
+    configurar_tema, cabecalho_savebyte, botao_verde, nav_estabelecimento,
+    COR_FUNDO, COR_CARD, COR_VERDE, COR_TEXTO, COR_TEXTO_SEC
+)
 
-    def pegaDadosEstabelecimento(self):
-        print('\nDigite o nome fantasia do estabelecimento\n')
-        nomeFantasia = input()
-        print('\nDigite o e-mail do estabelecimento')
-        email = input()
-        print('\nDigite o endereço do estabelecimento')
-        endereco = input()
-        print('\nDigite o CNPJ do estabelecimento (Somente numeros)')
-        cnpj = input()
-        print('\nDigite o tipo do estabelecimento (EX: padaria, mercado...)')
-        tipo = input()
-        print('\nCrie uma senha de acesso para o estabelecimento\n')
-        senha = input()
-
-        dados = {"nome":nomeFantasia,"email":email,"endereco":endereco,"cnpj":cnpj,"tipo":tipo,"senha":senha}
-
-        return dados
-
-    def pegaDadosLogin(self):
-        print('\n-----Login Estabelecimento-----')
-        print('Digite o e-mail:')
-        email = input()
-        print('Digite a senha:')
-        senha = input()
-
-        return {"email": email, "senha": senha}
-
-    def mensagem(self, msg):
-        print(msg)
+class TelaEstabelecimento:
+    def __init__(self):
+        configurar_tema()
 
     def cadastro_ou_login(self):
-        print("\n-------- SaveByte ---------")
-        print("Escolha sua opção:")
-        print("1 - Cadastrar Estabelecimento")
-        print("2 - Login de Estabelecimento")
-        print("0 - Retornar")
+        layout = [
+            *cabecalho_savebyte("Área do Estabelecimento", "Gerencie suas ofertas relâmpago e valide retiradas."),
+            [botao_verde("Login de Estabelecimento", "-LOGIN-", size=(34, 2))],
+            [botao_verde("Cadastrar Estabelecimento", "-CADASTRO-", size=(34, 2))],
+            [sg.Button("← Voltar", key="-VOLTAR-", button_color=(COR_TEXTO_SEC, COR_FUNDO), border_width=0, pad=((0, 0), (14, 0)))]
+        ]
+        window = sg.Window("SaveByte - Estabelecimento", layout, size=(430, 340), element_justification="center")
+        event, _ = window.read()
+        window.close()
+
+        mapa = {"-CADASTRO-": 1, "-LOGIN-": 2}
+        return mapa.get(event, 0)
+
+    def pegaDadosEstabelecimento(self):
+        # Inspirado no formulário do protótipo (4nova.png) com os campos do Estabelecimento
+        tipos = ["padaria", "restaurante", "mercado"]
+        layout = [
+            *cabecalho_savebyte("Cadastrar Estabelecimento", "Cadastre sua loja para publicar sacolas e reduzir perdas."),
+            [sg.Text("Nome fantasia", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-NOME-", size=(44, 1))],
+            [sg.Text("E-mail comercial", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-EMAIL-", size=(44, 1))],
+            [sg.Text("Endereço completo", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-ENDERECO-", size=(44, 1))],
+            [sg.Text("CNPJ (somente números)", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-CNPJ-", size=(44, 1))],
+            [sg.Text("Tipo de estabelecimento", font=("Helvetica", 9, "bold"))],
+            [sg.Combo(tipos, default_value="padaria", key="-TIPO-", readonly=True, size=(42, 1), background_color=COR_CARD)],
+            [sg.Text("Senha de acesso", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-SENHA-", password_char="*", size=(44, 1))],
+            [botao_verde("Concluir cadastro", "-SALVAR-", size=(38, 1))],
+            [sg.Button("Cancelar", key="-CANCELAR-", button_color=(COR_TEXTO_SEC, COR_FUNDO), border_width=0)]
+        ]
+
+        window = sg.Window("SaveByte - Novo Estabelecimento", layout, size=(440, 610))
         while True:
-            try:
-                return int(input("Escolha a opção: "))
-            except ValueError:
-                print("Valor inválido, digite um número inteiro.")
+            event, values = window.read()
+            if event in (sg.WIN_CLOSED, "-CANCELAR-"):
+                window.close()
+                return {"nome": "", "email": "", "endereco": "", "cnpj": "", "tipo": "", "senha": ""}
+
+            if event == "-SALVAR-":
+                dados = {
+                    "nome": values["-NOME-"].strip(),
+                    "email": values["-EMAIL-"].strip(),
+                    "endereco": values["-ENDERECO-"].strip(),
+                    "cnpj": values["-CNPJ-"].strip(),
+                    "tipo": values["-TIPO-"].strip(),
+                    "senha": values["-SENHA-"].strip(),
+                }
+                if all(dados.values()):
+                    window.close()
+                    return dados
+                sg.popup_error("Preencha todos os campos obrigatórios!", title="SaveByte")
+
+    def pegaDadosLogin(self):
+        layout = [
+            *cabecalho_savebyte("Login Estabelecimento", "Acesse o painel da sua loja."),
+            [sg.Text("E-mail", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-EMAIL-", size=(42, 1))],
+            [sg.Text("Senha", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-SENHA-", password_char="*", size=(42, 1))],
+            [botao_verde("Entrar no painel", "-ENTRAR-", size=(36, 1))],
+            [sg.Button("← Voltar", key="-VOLTAR-", button_color=(COR_TEXTO_SEC, COR_FUNDO), border_width=0)]
+        ]
+        window = sg.Window("Login Estabelecimento", layout, size=(420, 350))
+        event, values = window.read()
+        window.close()
+
+        if event == "-ENTRAR-":
+            return {"email": values["-EMAIL-"].strip(), "senha": values["-SENHA-"].strip()}
+        return {"email": "", "senha": ""}
 
     def menu_gerenciar_ofertas(self):
-            print('\n--- Gerenciar Ofertas Relâmpago ---')
-            print('1 - Criar nova oferta')
-            print('2 - Visualizar minhas ofertas')
-            print('3 - Atualizar uma oferta')
-            print('4 - Excluir uma oferta')
-            print('5 - Validar resgate de uma reserva')
-            print('0 - Deslogar e Voltar ao menu principal')
-            while True:
-                try:
-                    return int(input("Escolha a opção: "))
-                except ValueError:
-                    print("Valor inválido, digite um número inteiro.")
+        # Inspirado na tela "Cadastro de ofertas" (5nova.png) com ações do ControladorEstabelecimento
+        card_acoes = sg.Frame("", [
+            [botao_verde("+ Cadastrar nova oferta", "-CRIAR-", size=(34, 2))],
+            [sg.Button("📋 Visualizar minhas ofertas", key="-LISTAR-", button_color=(COR_TEXTO, COR_CARD), border_width=1, size=(34, 1), pad=(4, 4))],
+            [sg.Button("✏️ Atualizar uma oferta", key="-ATUALIZAR-", button_color=(COR_TEXTO, COR_CARD), border_width=1, size=(34, 1), pad=(4, 4))],
+            [sg.Button("🗑️ Excluir uma oferta", key="-EXCLUIR-", button_color=("#DC2626", COR_CARD), border_width=1, size=(34, 1), pad=(4, 4))],
+        ], background_color=COR_CARD, relief=sg.RELIEF_SOLID, expand_x=True, pad=(4, 8))
 
-#Feito por Gabriel
+        card_retirada = sg.Frame("", [
+            [sg.Text("Validação no balcão", font=("Helvetica", 11, "bold"), background_color=COR_CARD)],
+            [sg.Text("Confirme o código de 6 dígitos apresentado pelo cliente.", font=("Helvetica", 8), text_color=COR_TEXTO_SEC, background_color=COR_CARD)],
+            [botao_verde("🚲 Validar resgate de reserva", "-VALIDAR-", size=(34, 1))]
+        ], background_color=COR_CARD, relief=sg.RELIEF_SOLID, expand_x=True, pad=(4, 8))
+
+        layout = [
+            *cabecalho_savebyte("Cadastro de ofertas", "Gerencie as ofertas ativas e cadastre novas ofertas para resgate."),
+            [card_acoes],
+            [card_retirada],
+            [sg.Button("Sair da conta", key="-SAIR-", button_color=(COR_TEXTO_SEC, COR_FUNDO), border_width=0, pad=((0, 0), (8, 0)))],
+            nav_estabelecimento("ofertas")
+        ]
+
+        window = sg.Window("SaveByte - Painel do Estabelecimento", layout, size=(440, 580))
+        event, _ = window.read()
+        window.close()
+
+        # Mantém exata compatibilidade com o dicionário opcoes_oferta do ControladorEstabelecimento
+        mapa_opcoes = {
+            "-CRIAR-": 1,
+            "-LISTAR-": 2,
+            "-ATUALIZAR-": 3,
+            "-EXCLUIR-": 4,
+            "-VALIDAR-": 5,
+            "-NAV_RETIRADA-": 5,  # Clicar na aba "Retirada" da barra inferior também abre a validação!
+        }
+        return mapa_opcoes.get(event, 0)
+
+    def mensagem(self, msg):
+        sg.popup_ok(msg, title="SaveByte")

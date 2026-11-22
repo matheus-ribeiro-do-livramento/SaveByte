@@ -94,15 +94,24 @@ class ControladorReservas():
         self.validar_resgate(codigo)
 
     def abre_tela(self):
-        lista_opcoes = {1: self.lista_reservas, 2: self.consultar_reserva, 0: self.retornar}
-
         self._continua = True
         while self._continua:
-            opcao = self._tela_reserva.tela_opcoes()
-            if opcao in lista_opcoes:
-                lista_opcoes[opcao]()
-            else:
-                self._tela_reserva.mostra_mensagem("Opcao invalida")
+            reservas = self.pega_reservas_do_consumidor()
+            atuais = [self._dados_reserva(r) for r in reservas if r.esta_pendente()]
+            anteriores = [self._dados_reserva(r) for r in reservas if not r.esta_pendente()]
+
+            acao, id_reserva = self._tela_reserva.exibir_painel_reservas(atuais, anteriores)
+
+            if acao == "voltar":
+                self._continua = False
+            elif acao == "detalhes":
+                reserva = self.pega_reserva_por_id(id_reserva)
+                if reserva:
+                    self._tela_reserva.mostra_reserva_detalhes(self._dados_reserva(reserva))
+            elif acao == "cancelar":
+                reserva = self.pega_reserva_por_id(id_reserva)
+                if reserva and self._tela_reserva.pergunta_cancelamento():
+                    self.cancelar_reserva(reserva)
 
     def validar_resgate(self, codigo: str):
         # Feito por Augusto

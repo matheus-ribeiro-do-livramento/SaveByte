@@ -1,119 +1,91 @@
 from datetime import datetime
-class TelaOfertaRelampago():
+import FreeSimpleGUI as sg
+from view.tema_savebyte import (
+    configurar_tema, cabecalho_savebyte, botao_verde, nav_estabelecimento,
+    COR_FUNDO, COR_CARD, COR_VERDE, COR_VERDE_CLARO, COR_TEXTO, COR_TEXTO_SEC
+)
 
-    def pegaDadosOferta (self):
-        print('\nDigite o id:')
-        id = int(input())
-        print('\nDigite o titulo da oferta')
-        titulo = input()
-        print('Digite a descrição da oferta \n (Descreva quais os produtos virão)')
-        descricao = input()
-        print('Digite qual seria o preço total dos produtos')
-        original = float(input())
-        print('\nDigite o preço com desconto (Preço que será vendido)')
-        desconto = float(input())
-        print('Digite quantas ofertas estão disponiveis ')
-        quantidade = int(input())
-        print('Digite a a hora de inicio para a retirada (Formato de HH:MM ex: 14:00)')
-        jan_inc = input()
-        inicio = datetime.strptime(jan_inc, "%H:%M")
-        print('Digite a hora limite para retirada (Formato de HH:MM ex: 17:00)')
-        jan_fim = input()
-        fim = datetime.strptime(jan_fim, "%H:%M")
+class TelaOfertaRelampago:
+    def __init__(self):
+        configurar_tema()
 
-        return {"id": id, 
-                "titulo": titulo,
-                "descricao": descricao,
-                "original": original,
-                "desconto": desconto,
-                "quantidade": quantidade,
-                "inicio": inicio,
-                "fim": fim}
-    
-    def pegaIdOferta (self):
-            print('\nDigite o ID da oferta que deseja selecionar:')
-            return int(input())
+    def pegaDadosOferta(self):
+        layout = [
+            *cabecalho_savebyte("Nova oferta relâmpago", "Preencha os detalhes da sacola para resgate."),
+            [sg.Text("ID da Oferta", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-ID-", size=(42, 1))],
+            [sg.Text("Título (ex: Sacola de padaria)", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-TITULO-", size=(42, 1))],
+            [sg.Text("Descrição dos itens", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-DESC-", size=(42, 1))],
+            [sg.Text("Preço original (R$)", font=("Helvetica", 9, "bold")), sg.Push(), sg.Text("Preço com desconto (R$)", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-ORIG-", size=(18, 1)), sg.Push(), sg.Input(key="-DESC_VAL-", size=(18, 1))],
+            [sg.Text("Quantidade de sacolas", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-QTD-", size=(42, 1))],
+            [sg.Text("Início retirada (HH:MM)", font=("Helvetica", 9, "bold")), sg.Push(), sg.Text("Limite retirada (HH:MM)", font=("Helvetica", 9, "bold"))],
+            [sg.Input("14:00", key="-INICIO-", size=(18, 1)), sg.Push(), sg.Input("17:00", key="-FIM-", size=(18, 1))],
+            [botao_verde("Salvar oferta", "-SALVAR-", size=(36, 1))]
+        ]
+        window = sg.Window("Cadastrar Oferta", layout, size=(420, 520))
+        while True:
+            event, values = window.read()
+            if event == sg.WIN_CLOSED:
+                window.close()
+                return None
+            if event == "-SALVAR-":
+                try:
+                    dados = {
+                        "id": int(values["-ID-"]),
+                        "titulo": values["-TITULO-"],
+                        "descricao": values["-DESC-"],
+                        "original": float(values["-ORIG-"].replace(",", ".")),
+                        "desconto": float(values["-DESC_VAL-"].replace(",", ".")),
+                        "quantidade": int(values["-QTD-"]),
+                        "inicio": datetime.strptime(values["-INICIO-"].strip(), "%H:%M"),
+                        "fim": datetime.strptime(values["-FIM-"].strip(), "%H:%M"),
+                    }
+                    window.close()
+                    return dados
+                except ValueError:
+                    sg.popup_error("Verifique os valores numéricos e o formato de hora (HH:MM).")
 
-    def exibirOfertas (self, ofertas):
-        print('\n-----Suas Ofertas-----')
+    def exibirOfertas(self, ofertas):
+        """Corrige inclusive o return dentro do loop que havia no código de terminal e exibe em cards."""
         if not ofertas:
-            print("Nenhuma oferta encontrada")
+            sg.popup_ok("Nenhuma oferta encontrada.", title="Suas Ofertas")
             return False
 
+        cards = []
         for of in ofertas:
-            print(f'ID: {of.id} | Titulo: {of.titulo}\n| Descrição: {of.descricao}| Desconto: R${of.desconto}\n| Quantidade: {of.quantidade}')
-            return True
+            card = sg.Frame("", [
+                [
+                    sg.Text("🛍️", font=("Helvetica", 22), background_color=COR_VERDE_CLARO, pad=(12, 12)),
+                    sg.Column([
+                        [sg.Text(f"#{of.id} - {of.titulo}", font=("Helvetica", 11, "bold"), background_color=COR_CARD)],
+                        [sg.Text(of.descricao, font=("Helvetica", 8), text_color=COR_TEXTO_SEC, background_color=COR_CARD)],
+                        [sg.Text(f"R$ {of.desconto:.2f} (De R$ {of.original:.2f}) • Qtd: {of.quantidade}", font=("Helvetica", 9, "bold"), text_color=COR_VERDE, background_color=COR_CARD)]
+                    ], background_color=COR_CARD)
+                ]
+            ], background_color=COR_CARD, relief=sg.RELIEF_SOLID, expand_x=True, pad=(4, 4))
+            cards.append([card])
 
+        layout = [
+            *cabecalho_savebyte("Ofertas ativas", "Acompanhe reservas e horários das ofertas em andamento."),
+            [sg.Column(cards, scrollable=True, vertical_scroll_only=True, size=(400, 380), background_color=COR_FUNDO)],
+            [botao_verde("Fechar", "-FECHAR-", size=(34, 1))]
+        ]
+        window = sg.Window("Suas Ofertas", layout, size=(430, 540))
+        window.read()
+        window.close()
+        return True
 
-    def exibirCamposOferta(self, oferta):
-        print('\n----- Campos Atualizáveis -----')
-        print('Deixe o campo em branco e pressione Enter para manter o valor atual.\n')
-
-        print(f'Título atual [{oferta.titulo}]:')
-        titulo = input().strip()
-        if not titulo:
-            titulo = oferta.titulo
-
-        print(f'Descrição atual [{oferta.descricao}]:')
-        descricao = input().strip()
-        if not descricao:
-            descricao = oferta.descricao
-
-        print(f'Preço original atual [R$ {oferta.original}]:')
-        preco_org_str = input().strip()
-        if not preco_org_str:
-            original = oferta.original
-        else:
-            original = float(preco_org_str)
-
-        print(f'Preço com desconto atual [R$ {oferta.desconto}]:')
-        preco_desc_str = input().strip()
-        if not preco_desc_str:
-            desconto = oferta.desconto
-        else:
-            desconto = float(preco_desc_str)
-
-        print(f'Quantidade disponível atual [{oferta.quantidade}]:')
-        quantidade_str = input().strip()
-        if not quantidade_str:
-            quantidade = oferta.quantidade
-        else:
-            quantidade = int(quantidade_str)
-
-        inicio_formatado = oferta.inicio.strftime("%H:%M")
-        print(f'Hora de início atual [{inicio_formatado}] (Formato HH:MM):')
-        inicio = input().strip()
-        if not inicio:
-            inicio = oferta.inicio
-        else:
-            inicio = datetime.strptime(inicio, "%H:%M")
-
-        fim_formatado = oferta.fim.strftime("%H:%M")
-        print(f'Hora limite atual [{fim_formatado}] (Formato HH:MM):')
-        fim = input().strip()
-        if not fim:
-            fim = oferta.fim
-        else:
-            fim = datetime.strptime(fim, "%H:%M")
-
-        return {
-            "titulo": titulo,
-            "descricao": descricao,
-            "original": original,
-            "desconto": desconto,
-            "quantidade": quantidade,
-            "inicio": inicio,
-            "fim": fim
-        }    
+    def pegaIdOferta(self):
+        val = sg.popup_get_text("Digite o ID da oferta que deseja selecionar:", title="Selecionar Oferta")
+        return int(val) if val and val.isdigit() else -1
 
     def confimarExclusão(self, oferta):
-         self.exibirOfertas([oferta])
-         print('\nTem certeza da exclusão (S/N):')
-         resposta = input().strip().upper()
-         return resposta
-         
-         
-    def mensagem (self, msg):
-        print(msg)
+        resp = sg.popup_yes_no(f"Tem certeza que deseja excluir '{oferta.titulo}' (ID {oferta.id})?", title="Excluir Oferta")
+        return "S" if resp == "Yes" else "N"
 
-# Feito por Gabriel
+    def mensagem(self, msg):
+        sg.popup_ok(msg, title="SaveByte")
