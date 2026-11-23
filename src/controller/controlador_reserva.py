@@ -300,5 +300,12 @@ class ControladorReservas():
                 )
             tela.mostra_mensagem("Erro: Token inválido ou expirado.")
 
+    def atualizar_status_reserva(self, id_reserva: str, novo_status: str):
+        return self._bd.atualizar(id_reserva, {"status": novo_status})
+    #Feito por Gabriel
 
+    def pega_reservas_do_consumidor(self, id_consumidor: str):
+        documentos = self._bd.listar({"consumidor_id": id_consumidor})
+        return [Reserva.from_dict(doc) for doc in documentos]
+    #Feito por Gabriel
 # feito por matheus

@@ -6,6 +6,7 @@ from controller.controlador_consumidor import ControladorConsumidor
 from controller.controlador_reserva import ControladorReservas
 from controller.controlador_estabelecimento import ControladorEstabelecimento
 from controller.controlador_oferta_relampago import ControladorOfertaRelampago
+from src.controller.controlador_penalidade import ControladorPenalidade
 
 from model.consumidor import Consumidor
 from model.oferta_relampago import OfertaRelampago
@@ -22,6 +23,7 @@ class ControladorSistema:
         self._controlador_estabelecimento = ControladorEstabelecimento(self)
         self._controlador_oferta = ControladorOfertaRelampago(self)
         self._controlador_reservas = ControladorReservas(self)
+        self._controlador_penalidade = ControladorPenalidade(self)
         self._consumidores_com_dados_exemplo = set()
 
         self._tela_sistema = TelaSistema()
@@ -38,6 +40,10 @@ class ControladorSistema:
     @property
     def controlador_reservas(self):
         return self._controlador_reservas
+
+    @property
+    def controlador_penalidade(self):
+        return self._controlador_penalidade
 
     def definir_consumidor_logado(self, consumidor):
         self._consumidor_logado = consumidor

@@ -1,7 +1,8 @@
 from view.tela_consumidor import TelaConsumidor
 from model.consumidor import Consumidor
 from model.localizacao import Localizacao
-from database.metodos import BaseMetodos
+from datetime import datetime
+from src.database.metodos import BaseMetodos
 
 class ControladorConsumidor:
     def __init__(self, controlador_sistema):
@@ -67,6 +68,12 @@ class ControladorConsumidor:
         self._metodos.inserir(self._consumidor_para_documento(consumidor))
         self._consumidor.append(consumidor)
         return True
+
+    def buscar_por_id(self, id_consumidor: str):
+        dados = self._bd.buscar_por_id(id_consumidor)
+        if not dados:
+            return None
+        return Consumidor.from_dict(dados)
 
     def iniciar_cadastro(self):
         
@@ -137,6 +144,7 @@ class ControladorConsumidor:
         self._controlador_sistema.controlador_reservas.abre_tela()
 
     def interface_consumidor(self):
+
         lista_opcoes = {1: self.minhas_reservas, 0: self.retornar}
         self._continua = True
         while self._continua:
@@ -146,4 +154,21 @@ class ControladorConsumidor:
             else:
                 self._tela_consumidor.mensagem("Opção inválida.")
 
+    def bloquear_consumidor(self, id_consumidor: str, bloqueado_ate: datetime):
+        return self._bd.atualizar(
+            id_consumidor,
+            {
+                "status": "BLOQUEADO",
+                "bloqueado_ate": bloqueado_ate,
+            },
+        )
+
+    def desbloquear_consumidor(self, id_consumidor: str):
+        return self._bd.atualizar(
+            id_consumidor,
+            {
+                "status": "ATIVO",
+                "bloqueado_ate": None,
+            },
+        )
 #Feito por matheus
