@@ -3,10 +3,10 @@ from datetime import datetime
 
 
 class Token:
-    def __init__(self):
-        self._codigo = secrets.token_hex(3)
-        self._data_geracao = datetime.now()
-        self._usado = False
+    def __init__(self, codigo: str = None, data_geracao: datetime = None, usado: bool = False):
+        self._codigo = codigo or secrets.token_hex(3)
+        self._data_geracao = data_geracao or datetime.now()
+        self._usado = usado
 
     @property
     def codigo(self):

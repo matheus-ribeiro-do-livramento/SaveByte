@@ -1,15 +1,50 @@
 from view.tela_ofertaRelampago import TelaOfertaRelampago
 from model.oferta_relampago import OfertaRelampago
+from model.enums import StatusOferta
+from database.metodos import BaseMetodos
 
 class ControladorOfertaRelampago():
 
     def __init__(self, controlador_sistema):
-        self._ofertas = []
+        self._metodos = BaseMetodos("ofertas_relampago")
+        self._ofertas = [self._documento_para_oferta(d) for d in self._metodos.listar()]
         self._telaOferta = TelaOfertaRelampago()
         self._controlador_sistema = controlador_sistema
 
+    def _documento_para_oferta(self, dados):
+        oferta = OfertaRelampago(
+            dados["id"],
+            dados["titulo"],
+            dados["descricao"],
+            dados["nome_estabelecimento"],
+            dados["original"],
+            dados["desconto"],
+            dados["quantidade"],
+            dados["inicio"],
+            dados["fim"],
+        )
+        oferta.status = StatusOferta(dados.get("status", StatusOferta.DISPONIVEL.value))
+        return oferta
+
+    def _oferta_para_documento(self, oferta, estabelecimento=None):
+        return {
+            "id": oferta.id,
+            "titulo": oferta.titulo,
+            "descricao": oferta.descricao,
+            "nome_estabelecimento": oferta.nome_estabelecimento,
+            "estabelecimento_id": estabelecimento.cnpj if estabelecimento else oferta.nome_estabelecimento,
+            "original": oferta.original,
+            "desconto": oferta.desconto,
+            "quantidade": oferta.quantidade,
+            "inicio": oferta.inicio,
+            "fim": oferta.fim,
+            "status": oferta.status.value if isinstance(oferta.status, StatusOferta) else str(oferta.status),
+        }
+
     def criarOferta (self):
         dados = self._telaOferta.pegaDadosOferta()
+        if dados is None:
+            return
         user = self._controlador_sistema.estabelecimento_logado
 
         oferta = OfertaRelampago(dados["id"],
@@ -24,6 +59,10 @@ class ControladorOfertaRelampago():
         tempo_valido = oferta.validarJanelaRetirada()
 
         if tempo_valido:
+            if self._metodos.buscar_um({"id": dados["id"]}):
+                self._telaOferta.mensagem("Erro: já existe uma oferta com esse ID.")
+                return
+            self._metodos.inserir(self._oferta_para_documento(oferta, user))
             self._ofertas.append(oferta)
             self._telaOferta.mensagem('Oferta criada com sucesso!')
         else:
@@ -66,6 +105,10 @@ class ControladorOfertaRelampago():
         confirmaçãoExclusão = self._telaOferta.confimarExclusão(ofertaAExcluir)
 
         if confirmaçãoExclusão == 'S':
+            self._metodos.deletar_por_filtro({
+                "id": ofertaAExcluir.id,
+                "nome_estabelecimento": ofertaAExcluir.nome_estabelecimento,
+            })
             self._ofertas.remove(ofertaAExcluir)
             self._telaOferta.mensagem(F'\nOferta {idSelecionado} excluida com sucesso!')
             return
@@ -86,6 +129,10 @@ class ControladorOfertaRelampago():
         for of in self._ofertas:
             if of.id == idOferta:
                 oferta = of
+
+        if oferta is None:
+            self._telaOferta.mensagem('\nOferta não encontrada')
+            return
 
         possuiReserva = self._controlador_sistema.controlador_reservas.verificar_reserva(idOferta)
 
@@ -108,6 +155,10 @@ class ControladorOfertaRelampago():
 
         tempoValido = oferta.validarJanelaRetirada()
         if tempoValido:
+            self._metodos.atualizar_varios(
+                {"id": oferta.id, "nome_estabelecimento": oferta.nome_estabelecimento},
+                self._oferta_para_documento(oferta),
+            )
             self._telaOferta.mensagem('Oferta atualizada com sucesso!')
             return
         else:

@@ -1,7 +1,10 @@
 from bson import ObjectId
 from bson.errors import InvalidId
 from pymongo.errors import DuplicateKeyError
-from conexao import ConexaoMongo
+try:
+    from .conexao import ConexaoMongo
+except ImportError:
+    from .conexao import ConexaoMongo
 
 
 class BaseMetodos:
@@ -53,9 +56,20 @@ class BaseMetodos:
         )
         return resultado.modified_count
 
+    def atualizar_por_filtro(self, filtro: dict, novos_dados: dict) -> bool:
+        resultado = self._collection.update_one(
+            filtro,
+            {"$set": novos_dados}
+        )
+        return resultado.matched_count > 0
+
     def deletar(self, id_valor: str) -> bool:
         obj_id = self._converter_id(id_valor)
         if not obj_id:
             return False
         resultado = self._collection.delete_one({"_id": obj_id})
+        return resultado.deleted_count > 0
+
+    def deletar_por_filtro(self, filtro: dict) -> bool:
+        resultado = self._collection.delete_one(filtro)
         return resultado.deleted_count > 0

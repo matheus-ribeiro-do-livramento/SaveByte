@@ -1,13 +1,38 @@
 from view.tela_estabelecimento import TelaEstabelecimento
 from model.estabelecimento import Estabelecimento
+from model.enums import TipoEstabelecimento
+from database.metodos import BaseMetodos
 
 class ControladorEstabelecimento ():
 
     def __init__(self, controlador_sistema):
-        self.__estabelecimentos = []
+        self._metodos = BaseMetodos("estabelecimentos")
+        self.__estabelecimentos = [self._documento_para_estabelecimento(d) for d in self._metodos.listar()]
         self.__controlador_sistema = controlador_sistema
         self.__tela_estabelecimento = TelaEstabelecimento()
         self._continua = True
+
+    def _documento_para_estabelecimento(self, dados):
+        tipo = TipoEstabelecimento(dados.get("tipo", "padaria"))
+        return Estabelecimento(
+            dados["cnpj"],
+            dados["endereco"],
+            dados["nome_fantasia"],
+            tipo,
+            dados["senha"],
+            dados["email"],
+        )
+
+    def _estabelecimento_para_documento(self, estabelecimento):
+        tipo = estabelecimento.tipo.value if isinstance(estabelecimento.tipo, TipoEstabelecimento) else str(estabelecimento.tipo)
+        return {
+            "cnpj": estabelecimento.cnpj,
+            "endereco": estabelecimento.endereco,
+            "nome_fantasia": estabelecimento.nome_fantasia,
+            "tipo": tipo,
+            "senha": estabelecimento.senha,
+            "email": estabelecimento.email,
+        }
 
     def iniciarCadastro(self):
         dados = self.__tela_estabelecimento.pegaDadosEstabelecimento()
@@ -22,17 +47,24 @@ class ControladorEstabelecimento ():
     
 
     def cadastrarEstabelecimento (self, dados):
-
-        for est in self.__estabelecimentos:
-            if est.email == dados["email"] or est.cnpj == dados["cnpj"]:
-                return False
+        if dados is None:
+            return False
+        if self._metodos.buscar_um({
+            "$or": [
+                {"email": dados["email"]},
+                {"cnpj": dados["cnpj"]},
+            ]
+        }):
+            return False
+        tipo = TipoEstabelecimento(dados["tipo"])
         estabelecimento = Estabelecimento(dados["cnpj"],
                                           dados["endereco"], 
                                           dados["nome"], 
-                                          dados["tipo"], 
+                                          tipo,
                                           dados["senha"], 
                                           dados["email"])
         
+        self._metodos.inserir(self._estabelecimento_para_documento(estabelecimento))
         self.__estabelecimentos.append(estabelecimento)
         return True
 
@@ -53,10 +85,36 @@ class ControladorEstabelecimento ():
         self._continua = False
 
     def realizarLogin (self, dados):
-        for est in self.__estabelecimentos:
-            if est.email == dados["email"] and est.senha == dados["senha"]:
-                return est
+        documento = self._metodos.buscar_um({
+            "email": dados["email"],
+            "senha": dados["senha"],
+        })
+        if documento:
+            return self._documento_para_estabelecimento(documento)
         return None
+
+    def atualizar_estabelecimento(self, estabelecimento, novos_dados):
+        atualizado = self._metodos.atualizar_por_filtro(
+            {"cnpj": estabelecimento.cnpj},
+            novos_dados,
+        )
+        if atualizado:
+            documento = self._metodos.buscar_um({"cnpj": estabelecimento.cnpj})
+            novo = self._documento_para_estabelecimento(documento)
+            self.__estabelecimentos = [
+                est for est in self.__estabelecimentos
+                if est.cnpj != estabelecimento.cnpj
+            ]
+            self.__estabelecimentos.append(novo)
+        return atualizado
+
+    def excluir_estabelecimento(self, cnpj):
+        excluido = self._metodos.deletar_por_filtro({"cnpj": cnpj})
+        if excluido:
+            self.__estabelecimentos = [
+                est for est in self.__estabelecimentos if est.cnpj != cnpj
+            ]
+        return excluido
 
     def abre_tela_cadastro_ou_login(self):
         lista_opcoes = {1: self.iniciarCadastro, 

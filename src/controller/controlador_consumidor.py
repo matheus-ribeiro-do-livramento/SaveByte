@@ -1,30 +1,70 @@
 from view.tela_consumidor import TelaConsumidor
 from model.consumidor import Consumidor
 from model.localizacao import Localizacao
+from database.metodos import BaseMetodos
 
 class ControladorConsumidor:
     def __init__(self, controlador_sistema):
         self._controlador_sistema = controlador_sistema
         self._tela_consumidor = TelaConsumidor()
-        self._consumidor = []
+        self._metodos = BaseMetodos("consumidores")
+        self._consumidor = [self._documento_para_consumidor(d) for d in self._metodos.listar()]
         self._continua = True
 
-    def cadastrar_consumidor(self, dados):
-        for con in self._consumidor:
-            if con.email == dados["email"]:
-                return False
+    def _documento_para_consumidor(self, dados):
+        localizacao = dados.get("localizacao", {})
+        return Consumidor(
+            bloqueadoAte=dados.get("bloqueadoAte"),
+            preferenciasAlimentares=dados.get("preferenciasAlimentares", []),
+            penalidade=dados.get("penalidade", 0),
+            dataCadastro=dados.get("dataCadastro"),
+            email=dados["email"],
+            id=dados["id"],
+            localizacao=Localizacao(
+                localizacao.get("cidade", ""),
+                localizacao.get("bairro", ""),
+                localizacao.get("endereco", ""),
+            ),
+            nome=dados["nome"],
+            senha=dados["senha"],
+        )
 
+    def _consumidor_para_documento(self, consumidor):
+        return {
+            "id": consumidor.id,
+            "nome": consumidor.nome,
+            "email": consumidor.email,
+            "senha": consumidor.senha,
+            "localizacao": {
+                "cidade": consumidor.localizacao.cidade,
+                "bairro": consumidor.localizacao.bairro,
+                "endereco": consumidor.localizacao.endereco,
+            },
+            "bloqueadoAte": consumidor.bloqueadoAte,
+            "preferenciasAlimentares": consumidor.preferenciasAlimentares,
+            "penalidade": consumidor.penalidade,
+            "dataCadastro": consumidor.data_cadastro,
+        }
+
+    def cadastrar_consumidor(self, dados):
+        if dados is None:
+            return False
+        if self._metodos.buscar_um({"email": dados["email"]}):
+            return False
+
+        maior_id = max((con.id for con in self._consumidor), default=0)
         consumidor = Consumidor(
             bloqueadoAte=None,
             preferenciasAlimentares=[],
             penalidade=0,
             dataCadastro=None,
             email=dados["email"],
-            id=len(self._consumidor) + 1,
+            id=maior_id + 1,
             localizacao=Localizacao(dados["cidade"], dados["bairro"], dados["endereco"]),
             nome=dados["nome"],
             senha=dados["senha"],
         )
+        self._metodos.inserir(self._consumidor_para_documento(consumidor))
         self._consumidor.append(consumidor)
         return True
 
@@ -38,10 +78,37 @@ class ControladorConsumidor:
         return False
 
     def realizar_login(self, dados):
-        for consumidor in self._consumidor:
-            if consumidor.email == dados["email"] and consumidor.senha == dados["senha"]:
-                return consumidor
+        documento = self._metodos.buscar_um({
+            "email": dados["email"],
+            "senha": dados["senha"],
+        })
+        if documento:
+            return self._documento_para_consumidor(documento)
         return None
+
+    def atualizar_consumidor(self, consumidor, novos_dados):
+        documento = self._consumidor_para_documento(consumidor)
+        documento.update(novos_dados)
+        atualizado = self._metodos.atualizar_por_filtro(
+            {"id": consumidor.id},
+            novos_dados,
+        )
+        if atualizado:
+            self._consumidor = [
+                con for con in self._consumidor if con.id != consumidor.id
+            ]
+            self._consumidor.append(self._documento_para_consumidor(
+                self._metodos.buscar_um({"id": consumidor.id})
+            ))
+        return atualizado
+
+    def excluir_consumidor(self, consumidor_id):
+        excluido = self._metodos.deletar_por_filtro({"id": consumidor_id})
+        if excluido:
+            self._consumidor = [
+                con for con in self._consumidor if con.id != consumidor_id
+            ]
+        return excluido
 
     def retornar(self):
         self._continua = False

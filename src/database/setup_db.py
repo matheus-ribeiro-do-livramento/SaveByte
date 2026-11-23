@@ -1,5 +1,8 @@
 from pymongo import ASCENDING, DESCENDING
-from conexao import ConexaoMongo
+try:
+    from .conexao import ConexaoMongo
+except ImportError:
+    from conexao import ConexaoMongo
 
 
 def inicializar_banco():

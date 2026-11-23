@@ -107,6 +107,29 @@ Cadastra a loja, publica ofertas relâmpago, valida o token apresentado pelo con
 - MongoDB instalado localmente ou uma instância no MongoDB Atlas
 - pip
 
+### Configuração do MongoDB
+
+Instale as dependências e configure o acesso ao banco:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Crie um arquivo `.env` na raiz do projeto:
+
+```env
+MONGO_URI=mongodb://localhost:27017
+DB_NAME=savebyte
+```
+
+Para criar os índices configurados pelo projeto:
+
+```bash
+python src/database/setup_db.py
+```
+
 ## 🚧 Limitações da versão atual
 
 - O sistema **não processa pagamentos reais** — apenas simula o estorno e o contrato de reserva;

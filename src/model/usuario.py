@@ -28,5 +28,13 @@ class Usuario(ABC):
     def senha(self):
         return self._senha_hash
 
+    @property
+    def localizacao(self):
+        return self._localizacao
+
+    @property
+    def data_cadastro(self):
+        return self._data_cadastro
+
 
 #Feito por Matheus

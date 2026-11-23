@@ -7,14 +7,15 @@ from model.consumidor import Consumidor
 
 class Reserva:
     def __init__(self, id: int, consumidor: Consumidor, oferta: OfertaRelampago,
-                 data_hora_limite_retirada: datetime, data_hora_reserva: datetime = None):
+                 data_hora_limite_retirada: datetime, data_hora_reserva: datetime = None,
+                 status: StatusReserva = None, token: Token = None):
         self._id = id
         self._consumidor = consumidor
         self._oferta = oferta
         self._data_hora_limite_retirada = data_hora_limite_retirada
         self._data_hora_reserva = data_hora_reserva or datetime.now()
-        self._status = StatusReserva.PENDENTE
-        self._token = self.gerar_token() 
+        self._status = status or StatusReserva.PENDENTE
+        self._token = token or self.gerar_token()
 
     @property
     def id(self):

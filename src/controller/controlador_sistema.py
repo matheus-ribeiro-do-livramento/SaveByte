@@ -51,6 +51,9 @@ class ControladorSistema:
 
         if self._consumidor_logado.id in self._consumidores_com_dados_exemplo:
             return
+        if self._controlador_reservas.possui_reservas_do_consumidor(self._consumidor_logado.id):
+            self._consumidores_com_dados_exemplo.add(self._consumidor_logado.id)
+            return
 
         agora = datetime.now()
         c = self._consumidor_logado
