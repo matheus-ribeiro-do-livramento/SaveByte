@@ -83,6 +83,46 @@ class TelaOfertaRelampago:
         val = sg.popup_get_text("Digite o ID da oferta que deseja selecionar:", title="Selecionar Oferta")
         return int(val) if val and val.isdigit() else -1
 
+    def exibirCamposOferta(self, oferta):
+        inicio_str = oferta.inicio.strftime("%H:%M") if isinstance(oferta.inicio, datetime) else str(oferta.inicio)
+        fim_str = oferta.fim.strftime("%H:%M") if isinstance(oferta.fim, datetime) else str(oferta.fim)
+
+        layout = [
+            *cabecalho_savebyte(f"Editar oferta #{oferta.id}", "Atualize os detalhes da sacola para resgate."),
+            [sg.Text("Título (ex: Sacola de padaria)", font=("Helvetica", 9, "bold"))],
+            [sg.Input(str(oferta.titulo), key="-TITULO-", size=(42, 1))],
+            [sg.Text("Descrição dos itens", font=("Helvetica", 9, "bold"))],
+            [sg.Input(str(oferta.descricao), key="-DESC-", size=(42, 1))],
+            [sg.Text("Preço original (R$)", font=("Helvetica", 9, "bold")), sg.Push(), sg.Text("Preço com desconto (R$)", font=("Helvetica", 9, "bold"))],
+            [sg.Input(str(oferta.original), key="-ORIG-", size=(18, 1)), sg.Push(), sg.Input(str(oferta.desconto), key="-DESC_VAL-", size=(18, 1))],
+            [sg.Text("Quantidade de sacolas", font=("Helvetica", 9, "bold"))],
+            [sg.Input(str(oferta.quantidade), key="-QTD-", size=(42, 1))],
+            [sg.Text("Início retirada (HH:MM)", font=("Helvetica", 9, "bold")), sg.Push(), sg.Text("Limite retirada (HH:MM)", font=("Helvetica", 9, "bold"))],
+            [sg.Input(inicio_str, key="-INICIO-", size=(18, 1)), sg.Push(), sg.Input(fim_str, key="-FIM-", size=(18, 1))],
+            [botao_verde("Salvar alterações", "-SALVAR-", size=(36, 1))]
+        ]
+        window = sg.Window("Atualizar Oferta", layout, size=(420, 480))
+        while True:
+            event, values = window.read()
+            if event == sg.WIN_CLOSED:
+                window.close()
+                return None
+            if event == "-SALVAR-":
+                try:
+                    dados = {
+                        "titulo": values["-TITULO-"],
+                        "descricao": values["-DESC-"],
+                        "original": float(values["-ORIG-"].replace(",", ".")),
+                        "desconto": float(values["-DESC_VAL-"].replace(",", ".")),
+                        "quantidade": int(values["-QTD-"]),
+                        "inicio": datetime.strptime(values["-INICIO-"].strip(), "%H:%M"),
+                        "fim": datetime.strptime(values["-FIM-"].strip(), "%H:%M"),
+                    }
+                    window.close()
+                    return dados
+                except ValueError:
+                    sg.popup_error("Verifique os valores numéricos e o formato de hora (HH:MM).")
+
     def confimarExclusão(self, oferta):
         resp = sg.popup_yes_no(f"Tem certeza que deseja excluir '{oferta.titulo}' (ID {oferta.id})?", title="Excluir Oferta")
         return "S" if resp == "Yes" else "N"

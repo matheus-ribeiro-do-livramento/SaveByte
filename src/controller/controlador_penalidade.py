@@ -1,5 +1,5 @@
-from src.database.metodos import BaseMetodos
-from src.model import enums
+from database.metodos import BaseMetodos
+from model import enums
 from datetime import datetime, timedelta
 
 class ControladorPenalidade():

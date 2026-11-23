@@ -2,7 +2,7 @@ from view.tela_consumidor import TelaConsumidor
 from model.consumidor import Consumidor
 from model.localizacao import Localizacao
 from datetime import datetime
-from src.database.metodos import BaseMetodos
+from database.metodos import BaseMetodos
 
 class ControladorConsumidor:
     def __init__(self, controlador_sistema):

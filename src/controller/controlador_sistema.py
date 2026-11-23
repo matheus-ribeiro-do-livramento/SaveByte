@@ -6,7 +6,7 @@ from controller.controlador_consumidor import ControladorConsumidor
 from controller.controlador_reserva import ControladorReservas
 from controller.controlador_estabelecimento import ControladorEstabelecimento
 from controller.controlador_oferta_relampago import ControladorOfertaRelampago
-from src.controller.controlador_penalidade import ControladorPenalidade
+from controller.controlador_penalidade import ControladorPenalidade
 
 from model.consumidor import Consumidor
 from model.oferta_relampago import OfertaRelampago

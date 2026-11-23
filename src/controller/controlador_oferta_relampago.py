@@ -141,23 +141,26 @@ class ControladorOfertaRelampago():
             return
 
         ofertaAtualizada = self._telaOferta.exibirCamposOferta(oferta)
+        if ofertaAtualizada is None:
+            return
 
         inicio_org = oferta.inicio
         fim_org = oferta.fim
 
-        oferta.titulo = ofertaAtualizada["titulo"]
-        oferta.descricao = ofertaAtualizada["descricao"]
-        oferta.original = ofertaAtualizada["original"]
-        oferta.desconto = ofertaAtualizada["desconto"]
-        oferta.quantidade = ofertaAtualizada["quantidade"]
         oferta.inicio = ofertaAtualizada["inicio"]
         oferta.fim = ofertaAtualizada["fim"]
 
         tempoValido = oferta.validarJanelaRetirada()
         if tempoValido:
+            oferta.titulo = ofertaAtualizada["titulo"]
+            oferta.descricao = ofertaAtualizada["descricao"]
+            oferta.original = ofertaAtualizada["original"]
+            oferta.desconto = ofertaAtualizada["desconto"]
+            oferta.quantidade = ofertaAtualizada["quantidade"]
+            user = self._controlador_sistema.estabelecimento_logado
             self._metodos.atualizar_varios(
                 {"id": oferta.id, "nome_estabelecimento": oferta.nome_estabelecimento},
-                self._oferta_para_documento(oferta),
+                self._oferta_para_documento(oferta, user),
             )
             self._telaOferta.mensagem('Oferta atualizada com sucesso!')
             return
