@@ -4,6 +4,7 @@ from model.localizacao import Localizacao
 from datetime import datetime
 from database.metodos import BaseMetodos
 
+
 class ControladorConsumidor:
     def __init__(self, controlador_sistema):
         self._controlador_sistema = controlador_sistema
@@ -76,7 +77,6 @@ class ControladorConsumidor:
         return Consumidor.from_dict(dados)
 
     def iniciar_cadastro(self):
-        
         dados = self._tela_consumidor.cadastro_consumidor()
         if self.cadastrar_consumidor(dados):
             self._tela_consumidor.mensagem("Cadastro efetuado com sucesso!")
@@ -130,7 +130,6 @@ class ControladorConsumidor:
         self._controlador_sistema._carrega_dados_exemplo()
         self._tela_consumidor.mensagem(f"Login efetuado com sucesso! Bem-vindo, {consumidor.nome}.")
         self.interface_consumidor()
-    
 
     def abre_tela_cadastro_ou_login(self):
         lista_opcoes = {1: self.iniciar_cadastro, 2: self.iniciar_login, 0: self.retornar}
@@ -138,22 +137,27 @@ class ControladorConsumidor:
         while self._continua:
             opcao = self._tela_consumidor.cadastro_ou_login()
             if opcao in lista_opcoes:
-                lista_opcoes[opcao]()   
+                lista_opcoes[opcao]()
 
     def _navegar_abas(self, aba_atual):
-        while aba_atual in ("explorar", "reservas", "perfil"):
+        while aba_atual in ("explorar", "reservas", "impacto", "perfil"):
             if aba_atual == "explorar":
                 aba_atual = self._controlador_sistema.controlador_oferta.abre_tela_explorar()
             elif aba_atual == "reservas":
                 aba_atual = self._controlador_sistema.controlador_reservas.abre_tela()
             elif aba_atual == "perfil":
                 aba_atual = self.perfil_consumidor()
+            elif aba_atual == "impacto":
+                aba_atual = self._controlador_sistema.controlador_painel_impacto.abrir_tela()
 
     def minhas_reservas(self):
         self._navegar_abas("reservas")
 
     def explorar_ofertas(self):
         self._navegar_abas("explorar")
+
+    def painel_impacto(self):
+        self._navegar_abas("impacto")
 
     def em_breve(self):
         self._tela_consumidor.mensagem("Funcionalidade em desenvolvimento.")
@@ -206,8 +210,8 @@ class ControladorConsumidor:
         lista_opcoes = {
             1: self.minhas_reservas,
             2: self.explorar_ofertas,
-            3: self.perfil_consumidor,
-            4: self.em_breve,
+            3: self.painel_impacto,
+            4: self.perfil_consumidor,
             0: sair_da_conta,
         }
         while continua_menu:
@@ -241,4 +245,5 @@ class ControladorConsumidor:
                 "bloqueado_ate": None,
             },
         )
+
 #Feito por matheus

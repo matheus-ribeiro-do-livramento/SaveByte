@@ -41,7 +41,6 @@ class TelaConsumidor:
         return {"email": "", "senha": ""}
 
     def cadastro_consumidor(self):
-        # Inspirado no layout de inputs da tela "Minha conta" (4nova.png)
         campos = [
             ("Nome completo", "-NOME-"),
             ("E-mail", "-EMAIL-"),
@@ -84,7 +83,8 @@ class TelaConsumidor:
                 [botao_verde("🧭 Explorar Ofertas", "-EXPLORAR-", size=(34, 2))],
                 [botao_verde("📅 Minhas Reservas", "-RESERVAS-", size=(34, 2))],
                 [sg.Button("← Sair da conta", key="-VOLTAR-", button_color=(COR_TEXTO_SEC, "#FAF9F0"), border_width=0, pad=((0, 0), (14, 0)))],
-                nav_consumidor("explorar")
+                nav_consumidor("explorar"),
+                [sg.Button("Painel de Impacto", key="-IMPACTO-", expand_x=True)]
             ]
             window = sg.Window("SaveByte - Consumidor", layout, size=(430, 440), element_justification="center")
             event, _ = window.read()

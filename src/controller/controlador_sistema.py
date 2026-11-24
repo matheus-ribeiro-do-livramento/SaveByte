@@ -7,6 +7,7 @@ from controller.controlador_reserva import ControladorReservas
 from controller.controlador_estabelecimento import ControladorEstabelecimento
 from controller.controlador_oferta_relampago import ControladorOfertaRelampago
 from controller.controlador_penalidade import ControladorPenalidade
+from controller.controlador_painel_impacto import ControladorPainelImpacto
 
 from model.consumidor import Consumidor
 from model.oferta_relampago import OfertaRelampago
@@ -24,6 +25,7 @@ class ControladorSistema:
         self._controlador_oferta = ControladorOfertaRelampago(self)
         self._controlador_reservas = ControladorReservas(self)
         self._controlador_penalidade = ControladorPenalidade(self)
+        self._controlador_painel_impacto = ControladorPainelImpacto(self)
         self._consumidores_com_dados_exemplo = set()
 
         self._sincronizar_vinculos_iniciais()
@@ -158,6 +160,9 @@ class ControladorSistema:
 
     def estabelecimento(self):
         self._controlador_estabelecimento.abre_tela_cadastro_ou_login()
+
+    def abrir_painel_impacto(self, consumidor):
+        self.__controlador_painel_impacto.abrir_tela(consumidor)
 
     def encerra_sistema(self):
         exit(0)
