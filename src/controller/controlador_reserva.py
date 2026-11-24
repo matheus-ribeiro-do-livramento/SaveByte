@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+import unicodedata
 from view.tela_resgate import TelaResgate
 from view.tela_reserva import TelaReserva
 from model.reserva import Reserva
@@ -65,13 +67,16 @@ class ControladorReservas():
             token,
         )
         reserva._estabelecimento_id = dados.get("estabelecimento_id")
+        reserva._estoque_reservado = bool(dados.get("estoque_reservado", False))
         return reserva
 
     def recarregar_reservas(self):
         self._reservas = [self._documento_para_reserva(d) for d in self._metodos.listar()]
 
     def _normalizar_nome(self, nome):
-        return (nome or "").strip().casefold()
+        texto = unicodedata.normalize("NFKD", (nome or "").strip())
+        sem_acento = "".join(c for c in texto if not unicodedata.combining(c))
+        return sem_acento.casefold()
 
     def _reserva_para_documento(self, reserva, estabelecimento=None):
         consumidor = reserva.consumidor
@@ -111,12 +116,102 @@ class ControladorReservas():
             "data_hora_limite_retirada": reserva.data_hora_limite_retirada,
             "data_hora_reserva": reserva.data_hora_reserva,
             "status": reserva.status.value,
+            "estoque_reservado": bool(getattr(reserva, "_estoque_reservado", False)),
             "token": {
                 "codigo": reserva.token.codigo,
                 "data_geracao": reserva.token.data_geracao,
                 "usado": reserva.token.usado,
             },
         }
+
+    def criar_reserva_de_oferta(self, oferta, estabelecimento=None):
+        consumidor = self._controlador_sistema.consumidor_logado
+        if consumidor is None:
+            return None
+
+        # RF16: impedir que consumidores bloqueados realizem novas reservas
+        if consumidor.bloqueadoAte and datetime.now() < consumidor.bloqueadoAte:
+            self._tela_reserva.mostra_mensagem(
+                f"Sua conta está bloqueada até {consumidor.bloqueadoAte.strftime('%d/%m/%Y %H:%M')} e não pode realizar reservas."
+            )
+            return None
+
+        self.recarregar_reservas()
+        ctrl_of = self._controlador_sistema.controlador_oferta
+        ctrl_of.recarregar_ofertas()
+        oferta_atual = ctrl_of.buscar_oferta(oferta.id, oferta.nome_estabelecimento)
+        if oferta_atual is None:
+            self._tela_reserva.mostra_mensagem("Oferta não encontrada.")
+            return None
+
+        # RN02: mesma cidade e bairro
+        compat, _, est_resolvido = ctrl_of._oferta_no_bairro_do_consumidor(oferta_atual, consumidor)
+        estabelecimento = estabelecimento or est_resolvido
+        if not compat:
+            self._tela_reserva.mostra_mensagem(
+                "Você só pode reservar ofertas de estabelecimentos no mesmo bairro e cidade do seu cadastro."
+            )
+            return None
+
+        if oferta_atual.status != StatusOferta.DISPONIVEL or oferta_atual.quantidade <= 0:
+            self._tela_reserva.mostra_mensagem("Esta oferta está esgotada ou indisponível no momento.")
+            return None
+
+        # RN03: apenas 1 reserva por estabelecimento por dia para o mesmo consumidor
+        hoje = datetime.now().date()
+        alvo_estab = self._normalizar_nome(oferta_atual.nome_estabelecimento)
+        estab_cnpj = str(estabelecimento.cnpj).strip() if estabelecimento else None
+        for r in self._reservas:
+            if r.consumidor.id != consumidor.id or r.status == StatusReserva.CANCELADA:
+                continue
+            if not isinstance(r.data_hora_reserva, datetime) or r.data_hora_reserva.date() != hoje:
+                continue
+            mesmo_nome = self._normalizar_nome(r.oferta.nome_estabelecimento) == alvo_estab
+            estab_doc_id = getattr(r, "_estabelecimento_id", None)
+            mesmo_cnpj = estab_cnpj and estab_doc_id and str(estab_doc_id).strip() == estab_cnpj
+            if mesmo_nome or mesmo_cnpj:
+                self._tela_reserva.mostra_mensagem(
+                    f"Você já realizou uma reserva em '{oferta_atual.nome_estabelecimento}' hoje (limite de 1 por dia por estabelecimento)."
+                )
+                return None
+
+        agora = datetime.now()
+        if isinstance(oferta_atual.fim, datetime) and oferta_atual.fim.year > 1900:
+            limite_retirada = oferta_atual.fim
+        elif isinstance(oferta_atual.fim, datetime):
+            limite_retirada = agora.replace(
+                hour=oferta_atual.fim.hour,
+                minute=oferta_atual.fim.minute,
+                second=0,
+                microsecond=0,
+            )
+            if limite_retirada <= agora:
+                limite_retirada = limite_retirada + timedelta(days=1)
+        else:
+            limite_retirada = agora + timedelta(hours=3)
+
+        novo_id = max((r.id for r in self._reservas if isinstance(r.id, int)), default=0) + 1
+        nova_reserva = Reserva(
+            novo_id,
+            consumidor,
+            oferta_atual,
+            limite_retirada,
+            data_hora_reserva=agora,
+        )
+        nova_reserva._estabelecimento_id = estabelecimento.cnpj if estabelecimento else oferta_atual.nome_estabelecimento
+        nova_reserva._estoque_reservado = True
+
+        ctrl_of.reservar_estoque_oferta(oferta_atual, estabelecimento)
+        self._metodos.inserir(self._reserva_para_documento(nova_reserva, estabelecimento))
+        self._reservas.append(nova_reserva)
+
+        self._tela_reserva.mostra_mensagem(
+            f"Reserva #{nova_reserva.id} confirmada!\n"
+            f"Oferta: {oferta_atual.titulo}\n"
+            f"Estabelecimento: {oferta_atual.nome_estabelecimento}\n"
+            f"Código de retirada (token): {nova_reserva.token.codigo}"
+        )
+        return nova_reserva
 
     def todas_reservas(self):
         return list(self._reservas)
@@ -283,6 +378,8 @@ class ControladorReservas():
                 {"id": reserva.id, "consumidor_id": reserva.consumidor.id},
                 {"status": reserva.status.value},
             )
+            if getattr(reserva, "_estoque_reservado", False):
+                self._controlador_sistema.controlador_oferta.devolver_estoque_oferta(reserva.oferta)
             self._tela_reserva.mostra_mensagem("Reserva cancelada com sucesso!")
 
     def retornar(self):
@@ -307,6 +404,14 @@ class ControladorReservas():
 
             if acao == "voltar":
                 self._continua = False
+                return "menu"
+            elif acao == "explorar":
+                self._continua = False
+                return "explorar"
+            elif acao == "atualizar":
+                continue
+            elif acao == "em_breve":
+                self._tela_reserva.mostra_mensagem("Funcionalidade em desenvolvimento.")
             elif acao == "detalhes":
                 reserva = self.pega_reserva_por_id(id_reserva)
                 if reserva:
@@ -315,6 +420,7 @@ class ControladorReservas():
                 reserva = self.pega_reserva_por_id(id_reserva)
                 if reserva and self._tela_reserva.pergunta_cancelamento():
                     self.cancelar_reserva(reserva)
+        return "menu"
 
     def validar_resgate(self, codigo: str):
         # Feito por Augusto
@@ -355,7 +461,9 @@ class ControladorReservas():
                 },
             )
             self._controlador_sistema.controlador_oferta.registrar_resgate_oferta(
-                reserva.oferta, estabelecimento
+                reserva.oferta,
+                estabelecimento,
+                decrementar_estoque=not getattr(reserva, "_estoque_reservado", False),
             )
             tela.mostra_mensagem("Resgate validado com sucesso!")
         else:

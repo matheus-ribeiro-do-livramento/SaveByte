@@ -81,14 +81,19 @@ class TelaConsumidor:
     def tela_opcoes(self):
             layout = [
                 *cabecalho_savebyte("Área do Consumidor", "O que deseja fazer agora?"),
+                [botao_verde("🧭 Explorar Ofertas", "-EXPLORAR-", size=(34, 2))],
                 [botao_verde("📅 Minhas Reservas", "-RESERVAS-", size=(34, 2))],
                 [sg.Button("← Sair da conta", key="-VOLTAR-", button_color=(COR_TEXTO_SEC, "#FAF9F0"), border_width=0, pad=((0, 0), (14, 0)))],
                 nav_consumidor("explorar")
             ]
-            window = sg.Window("SaveByte - Consumidor", layout, size=(430, 380), element_justification="center")
+            window = sg.Window("SaveByte - Consumidor", layout, size=(430, 440), element_justification="center")
             event, _ = window.read()
             window.close()
 
             if event in ("-RESERVAS-", "-NAV_RESERVAS-"):
                 return 1
+            if event in ("-EXPLORAR-", "-NAV_EXPLORAR-"):
+                return 2
+            if event in ("-NAV_IMPACTO-", "-NAV_PERFIL-"):
+                return 3
             return 0

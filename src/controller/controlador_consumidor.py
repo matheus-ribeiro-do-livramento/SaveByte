@@ -140,14 +140,37 @@ class ControladorConsumidor:
             if opcao in lista_opcoes:
                 lista_opcoes[opcao]()   
 
+    def _navegar_abas(self, aba_atual):
+        while aba_atual in ("explorar", "reservas"):
+            if aba_atual == "explorar":
+                aba_atual = self._controlador_sistema.controlador_oferta.abre_tela_explorar()
+            elif aba_atual == "reservas":
+                aba_atual = self._controlador_sistema.controlador_reservas.abre_tela()
+
     def minhas_reservas(self):
-        self._controlador_sistema.controlador_reservas.abre_tela()
+        self._navegar_abas("reservas")
+
+    def explorar_ofertas(self):
+        self._navegar_abas("explorar")
+
+    def em_breve(self):
+        self._tela_consumidor.mensagem("Funcionalidade em desenvolvimento.")
 
     def interface_consumidor(self):
+        continua_menu = True
 
-        lista_opcoes = {1: self.minhas_reservas, 0: self.retornar}
-        self._continua = True
-        while self._continua:
+        def sair_da_conta():
+            nonlocal continua_menu
+            self._controlador_sistema.definir_consumidor_logado(None)
+            continua_menu = False
+
+        lista_opcoes = {
+            1: self.minhas_reservas,
+            2: self.explorar_ofertas,
+            3: self.em_breve,
+            0: sair_da_conta,
+        }
+        while continua_menu:
             opcao = self._tela_consumidor.tela_opcoes()
             if opcao in lista_opcoes:
                 lista_opcoes[opcao]()

@@ -10,11 +10,14 @@ class Estabelecimento:
         nome_fantasia: str,
         tipo: TipoEstabelecimento,
         senha: str,
-        email: str
-
+        email: str,
+        cidade: str = "",
+        bairro: str = "",
+        localizacao: Localizacao = None,
     ):
         self._cnpj = cnpj
-        self._endereco = endereco
+        self._localizacao = localizacao or Localizacao(cidade, bairro, endereco)
+        self._endereco = self._localizacao.endereco
         self._nome_fantasia = nome_fantasia
         self._tipo = tipo
         self._senha = senha
@@ -30,11 +33,37 @@ class Estabelecimento:
 
     @property
     def endereco(self):
-        return self._endereco
+        return self._localizacao.endereco
 
     @endereco.setter
     def endereco(self, endereco):
         self._endereco = endereco
+        self._localizacao.endereco = endereco
+
+    @property
+    def localizacao(self):
+        return self._localizacao
+
+    @localizacao.setter
+    def localizacao(self, localizacao: Localizacao):
+        self._localizacao = localizacao
+        self._endereco = localizacao.endereco
+
+    @property
+    def cidade(self):
+        return self._localizacao.cidade
+
+    @cidade.setter
+    def cidade(self, cidade: str):
+        self._localizacao.cidade = cidade
+
+    @property
+    def bairro(self):
+        return self._localizacao.bairro
+
+    @bairro.setter
+    def bairro(self, bairro: str):
+        self._localizacao.bairro = bairro
 
     @property
     def nome_fantasia(self):

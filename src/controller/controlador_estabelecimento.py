@@ -1,5 +1,6 @@
 from view.tela_estabelecimento import TelaEstabelecimento
 from model.estabelecimento import Estabelecimento
+from model.localizacao import Localizacao
 from model.enums import TipoEstabelecimento
 from database.metodos import BaseMetodos
 
@@ -14,13 +15,19 @@ class ControladorEstabelecimento ():
 
     def _documento_para_estabelecimento(self, dados):
         tipo = TipoEstabelecimento(dados.get("tipo", "padaria"))
+        loc = dados.get("localizacao") or {}
+        endereco = loc.get("endereco") or dados.get("endereco", "")
+        cidade = loc.get("cidade") or dados.get("cidade", "")
+        bairro = loc.get("bairro") or dados.get("bairro", "")
         return Estabelecimento(
             dados["cnpj"],
-            dados["endereco"],
+            endereco,
             dados["nome_fantasia"],
             tipo,
             dados["senha"],
             dados["email"],
+            cidade=cidade,
+            bairro=bairro,
         )
 
     def _estabelecimento_para_documento(self, estabelecimento):
@@ -28,6 +35,11 @@ class ControladorEstabelecimento ():
         return {
             "cnpj": estabelecimento.cnpj,
             "endereco": estabelecimento.endereco,
+            "localizacao": {
+                "cidade": estabelecimento.cidade,
+                "bairro": estabelecimento.bairro,
+                "endereco": estabelecimento.endereco,
+            },
             "nome_fantasia": estabelecimento.nome_fantasia,
             "tipo": tipo,
             "senha": estabelecimento.senha,
@@ -36,6 +48,8 @@ class ControladorEstabelecimento ():
 
     def iniciarCadastro(self):
         dados = self.__tela_estabelecimento.pegaDadosEstabelecimento()
+        if dados is None:
+            return
 
         certo = self.cadastrarEstabelecimento(dados)
 
@@ -62,12 +76,17 @@ class ControladorEstabelecimento ():
                                           dados["nome"], 
                                           tipo,
                                           dados["senha"], 
-                                          dados["email"])
+                                          dados["email"],
+                                          cidade=dados.get("cidade", ""),
+                                          bairro=dados.get("bairro", ""))
         
         self._metodos.inserir(self._estabelecimento_para_documento(estabelecimento))
         self.__estabelecimentos.append(estabelecimento)
         self.__controlador_sistema.vincular_estabelecimento(estabelecimento)
         return True
+
+    def recarregar_estabelecimentos(self):
+        self.__estabelecimentos = [self._documento_para_estabelecimento(d) for d in self._metodos.listar()]
 
     def listar_estabelecimentos(self):
         return list(self.__estabelecimentos)
@@ -76,6 +95,13 @@ class ControladorEstabelecimento ():
         alvo = (nome_fantasia or "").strip().casefold()
         for est in self.__estabelecimentos:
             if (est.nome_fantasia or "").strip().casefold() == alvo:
+                return est
+        return None
+
+    def buscar_por_cnpj(self, cnpj: str):
+        alvo = str(cnpj or "").strip()
+        for est in self.__estabelecimentos:
+            if str(est.cnpj).strip() == alvo:
                 return est
         return None
 
@@ -117,6 +143,7 @@ class ControladorEstabelecimento ():
                 if est.cnpj != estabelecimento.cnpj
             ]
             self.__estabelecimentos.append(novo)
+            self.__controlador_sistema.vincular_estabelecimento(novo)
         return atualizado
 
     def excluir_estabelecimento(self, cnpj):
@@ -143,6 +170,28 @@ class ControladorEstabelecimento ():
     def logar_estabelecimento(self):
         user = self.iniciarLogin()
         if user:
+            if not user.bairro.strip() or not user.cidade.strip():
+                loc = self.__tela_estabelecimento.completar_localizacao(
+                    user.nome_fantasia,
+                    user.endereco,
+                    user.bairro,
+                    user.cidade,
+                )
+                if loc:
+                    user.endereco = loc["endereco"]
+                    user.bairro = loc["bairro"]
+                    user.cidade = loc["cidade"]
+                    self.atualizar_estabelecimento(
+                        user,
+                        {
+                            "endereco": user.endereco,
+                            "localizacao": {
+                                "cidade": user.cidade,
+                                "bairro": user.bairro,
+                                "endereco": user.endereco,
+                            },
+                        },
+                    )
             self.__controlador_sistema.definir_estabelecimento_logado(user)
             self.__controlador_sistema.vincular_estabelecimento(user)
             self.abrir_gerenciador_ofertas()

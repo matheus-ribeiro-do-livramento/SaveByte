@@ -95,6 +95,12 @@ class TelaReserva:
         if event and event.startswith("-DETALHES_"):
             id_res = int(event.replace("-DETALHES_", "").replace("-", ""))
             return ("detalhes", id_res)
+        if event == "-NAV_EXPLORAR-":
+            return ("explorar", None)
+        if event == "-NAV_RESERVAS-":
+            return ("atualizar", None)
+        if event in ("-NAV_IMPACTO-", "-NAV_PERFIL-"):
+            return ("em_breve", None)
         return ("voltar", None)
 
     def mostra_reserva_detalhes(self, dados_reserva):

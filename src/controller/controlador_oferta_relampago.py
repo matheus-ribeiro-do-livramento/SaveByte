@@ -1,6 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+import unicodedata
 from view.tela_ofertaRelampago import TelaOfertaRelampago
+from view.tela_explorar import TelaExplorar
 from model.oferta_relampago import OfertaRelampago
+from model.localizacao import Localizacao
 from model.enums import StatusOferta, StatusReserva
 from database.metodos import BaseMetodos
 
@@ -10,9 +13,16 @@ class ControladorOfertaRelampago():
         self._metodos = BaseMetodos("ofertas_relampago")
         self._ofertas = [self._documento_para_oferta(d) for d in self._metodos.listar()]
         self._telaOferta = TelaOfertaRelampago()
+        self._telaExplorar = TelaExplorar()
         self._controlador_sistema = controlador_sistema
 
     def _documento_para_oferta(self, dados):
+        loc_dados = dados.get("localizacao") or {}
+        localizacao = Localizacao(
+            loc_dados.get("cidade", ""),
+            loc_dados.get("bairro", ""),
+            loc_dados.get("endereco", ""),
+        )
         oferta = OfertaRelampago(
             dados["id"],
             dados["titulo"],
@@ -23,17 +33,28 @@ class ControladorOfertaRelampago():
             dados["quantidade"],
             dados["inicio"],
             dados["fim"],
+            localizacao=localizacao,
         )
         oferta.status = StatusOferta(dados.get("status", StatusOferta.DISPONIVEL.value))
+        oferta._estabelecimento_id = dados.get("estabelecimento_id")
         return oferta
 
     def _oferta_para_documento(self, oferta, estabelecimento=None):
+        if estabelecimento is not None:
+            loc = estabelecimento.localizacao
+        else:
+            loc = oferta.localizacao
         return {
             "id": oferta.id,
             "titulo": oferta.titulo,
             "descricao": oferta.descricao,
             "nome_estabelecimento": oferta.nome_estabelecimento,
-            "estabelecimento_id": estabelecimento.cnpj if estabelecimento else oferta.nome_estabelecimento,
+            "estabelecimento_id": estabelecimento.cnpj if estabelecimento else getattr(oferta, "_estabelecimento_id", None) or oferta.nome_estabelecimento,
+            "localizacao": {
+                "cidade": loc.cidade if loc else "",
+                "bairro": loc.bairro if loc else "",
+                "endereco": loc.endereco if loc else "",
+            },
             "original": oferta.original,
             "desconto": oferta.desconto,
             "quantidade": oferta.quantidade,
@@ -43,7 +64,9 @@ class ControladorOfertaRelampago():
         }
 
     def _normalizar_nome(self, nome):
-        return (nome or "").strip().casefold()
+        texto = unicodedata.normalize("NFKD", (nome or "").strip())
+        sem_acento = "".join(c for c in texto if not unicodedata.combining(c))
+        return sem_acento.casefold()
 
     def _oferta_expirada_por_tempo(self, oferta):
         return (
@@ -109,6 +132,7 @@ class ControladorOfertaRelampago():
             )
 
         nome_estab = estabelecimento.nome_fantasia if estabelecimento else oferta_origem.nome_estabelecimento
+        loc = estabelecimento.localizacao if estabelecimento is not None else oferta_origem.localizacao
         nova_oferta = OfertaRelampago(
             oferta_origem.id,
             oferta_origem.titulo,
@@ -119,12 +143,16 @@ class ControladorOfertaRelampago():
             oferta_origem.quantidade,
             oferta_origem.inicio,
             oferta_origem.fim,
+            localizacao=Localizacao(loc.cidade, loc.bairro, loc.endereco) if loc else Localizacao("", "", ""),
         )
         nova_oferta.status = (
             oferta_origem.status
             if isinstance(oferta_origem.status, StatusOferta)
             else StatusOferta(str(oferta_origem.status))
         )
+        if nova_oferta.status == StatusOferta.DISPONIVEL and self._oferta_expirada_por_tempo(nova_oferta):
+            nova_oferta.status = StatusOferta.EXPIRADA
+        nova_oferta._estabelecimento_id = estabelecimento.cnpj if estabelecimento else nome_estab
 
         self._metodos.inserir(self._oferta_para_documento(nova_oferta, estabelecimento))
         self._ofertas.append(nova_oferta)
@@ -136,20 +164,50 @@ class ControladorOfertaRelampago():
 
     def vincular_estabelecimento_nas_ofertas(self, estabelecimento):
         alvo = self._normalizar_nome(estabelecimento.nome_fantasia)
+        loc_doc = {
+            "cidade": estabelecimento.cidade,
+            "bairro": estabelecimento.bairro,
+            "endereco": estabelecimento.endereco,
+        }
         for of in self._ofertas:
-            if self._normalizar_nome(of.nome_estabelecimento) == alvo:
+            estab_id = getattr(of, "_estabelecimento_id", None)
+            mesmo_estab = (
+                self._normalizar_nome(of.nome_estabelecimento) == alvo
+                or (estab_id is not None and str(estab_id).strip() == str(estabelecimento.cnpj).strip())
+            )
+            if mesmo_estab:
                 nome_antigo = of.nome_estabelecimento
                 of.nome_estabelecimento = estabelecimento.nome_fantasia
+                of._estabelecimento_id = estabelecimento.cnpj
+                of.localizacao = Localizacao(
+                    estabelecimento.cidade,
+                    estabelecimento.bairro,
+                    estabelecimento.endereco,
+                )
                 self._metodos.atualizar_varios(
                     {"id": of.id, "nome_estabelecimento": nome_antigo},
                     {
                         "estabelecimento_id": estabelecimento.cnpj,
                         "nome_estabelecimento": estabelecimento.nome_fantasia,
+                        "localizacao": loc_doc,
                     },
                 )
 
-    def registrar_resgate_oferta(self, oferta_reserva, estabelecimento=None):
+    def registrar_resgate_oferta(self, oferta_reserva, estabelecimento=None, decrementar_estoque=True):
         oferta = self.registrar_oferta_se_nao_existir(oferta_reserva, estabelecimento)
+        if decrementar_estoque and oferta.quantidade > 0:
+            oferta.decrementar_quantidade()
+        if estabelecimento is None:
+            estabelecimento = self._controlador_sistema.controlador_estabelecimento.buscar_por_nome_fantasia(
+                oferta.nome_estabelecimento
+            )
+        self._metodos.atualizar_varios(
+            {"id": oferta.id, "nome_estabelecimento": oferta.nome_estabelecimento},
+            self._oferta_para_documento(oferta, estabelecimento),
+        )
+        return oferta
+
+    def reservar_estoque_oferta(self, oferta, estabelecimento=None):
         if oferta.quantidade > 0:
             oferta.decrementar_quantidade()
         if estabelecimento is None:
@@ -161,6 +219,146 @@ class ControladorOfertaRelampago():
             self._oferta_para_documento(oferta, estabelecimento),
         )
         return oferta
+
+    def devolver_estoque_oferta(self, oferta_reserva):
+        self.recarregar_ofertas()
+        oferta = self.buscar_oferta(oferta_reserva.id, oferta_reserva.nome_estabelecimento)
+        if oferta is None:
+            return None
+        oferta.incrementar_quantidade()
+        estabelecimento = self._controlador_sistema.controlador_estabelecimento.buscar_por_nome_fantasia(
+            oferta.nome_estabelecimento
+        )
+        self._metodos.atualizar_varios(
+            {"id": oferta.id, "nome_estabelecimento": oferta.nome_estabelecimento},
+            self._oferta_para_documento(oferta, estabelecimento),
+        )
+        return oferta
+
+    def _obter_localizacao_oferta(self, oferta):
+        ctrl_est = self._controlador_sistema.controlador_estabelecimento
+        est = None
+        estab_id = getattr(oferta, "_estabelecimento_id", None)
+        if estab_id:
+            est = ctrl_est.buscar_por_cnpj(estab_id)
+        if est is None:
+            est = ctrl_est.buscar_por_nome_fantasia(oferta.nome_estabelecimento)
+        if est is not None and (est.bairro or est.cidade):
+            return est.localizacao, est
+        return oferta.localizacao, est
+
+    def _oferta_no_bairro_do_consumidor(self, oferta, consumidor):
+        if consumidor is None or consumidor.localizacao is None:
+            return False, None, None
+        bairro_cons = self._normalizar_nome(consumidor.localizacao.bairro)
+        cidade_cons = self._normalizar_nome(consumidor.localizacao.cidade)
+        if not bairro_cons:
+            return False, None, None
+
+        loc_of, est = self._obter_localizacao_oferta(oferta)
+        if loc_of is None:
+            return False, None, est
+
+        bairro_of = self._normalizar_nome(loc_of.bairro)
+        cidade_of = self._normalizar_nome(loc_of.cidade)
+
+        if not bairro_of or bairro_of != bairro_cons:
+            return False, loc_of, est
+        if cidade_cons and cidade_of and cidade_of != cidade_cons:
+            return False, loc_of, est
+        return True, loc_of, est
+
+    def _formatar_tempo_restante(self, oferta):
+        if not isinstance(oferta.fim, datetime):
+            return f"Retirada até {oferta.fim}"
+
+        agora = datetime.now()
+        if oferta.fim.year > 1900:
+            delta = oferta.fim - agora
+            if delta.total_seconds() <= 0:
+                return "Expirada"
+            total_min = int(delta.total_seconds() // 60)
+            horas, minutos = divmod(total_min, 60)
+            return f"Expira em {horas}h {minutos:02d}min (até {oferta.fim.strftime('%d/%m %H:%M')})"
+
+        limite_hoje = agora.replace(
+            hour=oferta.fim.hour,
+            minute=oferta.fim.minute,
+            second=0,
+            microsecond=0,
+        )
+        if limite_hoje > agora:
+            delta = limite_hoje - agora
+            total_min = int(delta.total_seconds() // 60)
+            horas, minutos = divmod(total_min, 60)
+            return f"Expira em {horas}h {minutos:02d}min (até {oferta.fim.strftime('%H:%M')})"
+        inicio_str = oferta.inicio.strftime("%H:%M") if isinstance(oferta.inicio, datetime) else str(oferta.inicio)
+        return f"Retirada: {inicio_str} às {oferta.fim.strftime('%H:%M')}"
+
+    def listar_ofertas_proximas_consumidor(self, consumidor):
+        self.recarregar_ofertas()
+        self._controlador_sistema.controlador_estabelecimento.recarregar_estabelecimentos()
+
+        resultados = []
+        for of in self._ofertas:
+            if of.status in (StatusOferta.EXPIRADA, StatusOferta.CANCELADA):
+                continue
+            if self._oferta_expirada_por_tempo(of):
+                continue
+
+            compat, loc_of, est = self._oferta_no_bairro_do_consumidor(of, consumidor)
+            if not compat:
+                continue
+
+            esgotada = (of.status == StatusOferta.ESGOTADA) or (of.quantidade <= 0)
+            resultados.append({
+                "oferta": of,
+                "estabelecimento_obj": est,
+                "id": of.id,
+                "titulo": of.titulo,
+                "descricao": of.descricao,
+                "estabelecimento": of.nome_estabelecimento,
+                "bairro": loc_of.bairro if loc_of else "",
+                "cidade": loc_of.cidade if loc_of else "",
+                "endereco": loc_of.endereco if loc_of else "",
+                "original": of.original,
+                "desconto": of.desconto,
+                "quantidade": of.quantidade,
+                "status": of.status.value,
+                "esgotada": esgotada,
+                "tempo_restante": self._formatar_tempo_restante(of),
+            })
+
+        resultados.sort(key=lambda item: (item["esgotada"], item["estabelecimento"].lower(), item["id"]))
+        return resultados
+
+    def abre_tela_explorar(self):
+        consumidor = self._controlador_sistema.consumidor_logado
+        if consumidor is None:
+            return None
+
+        while True:
+            ofertas_dados = self.listar_ofertas_proximas_consumidor(consumidor)
+            acao, idx = self._telaExplorar.exibir_painel_explorar(
+                consumidor.localizacao.bairro,
+                consumidor.localizacao.cidade,
+                ofertas_dados,
+            )
+
+            if acao == "voltar":
+                return "menu"
+            if acao == "reservas":
+                return "reservas"
+            if acao == "em_breve":
+                self._telaExplorar.mostra_mensagem("Funcionalidade em desenvolvimento.")
+            elif acao == "atualizar":
+                continue
+            elif acao == "reservar" and idx is not None and 0 <= idx < len(ofertas_dados):
+                item = ofertas_dados[idx]
+                self._controlador_sistema.controlador_reservas.criar_reserva_de_oferta(
+                    item["oferta"],
+                    estabelecimento=item["estabelecimento_obj"],
+                )
 
     def criarOferta (self):
         dados = self._telaOferta.pegaDadosOferta()
@@ -176,7 +374,9 @@ class ControladorOfertaRelampago():
                                  dados["desconto"],
                                  dados["quantidade"],
                                  dados["inicio"],
-                                 dados["fim"])
+                                 dados["fim"],
+                                 localizacao=Localizacao(user.cidade, user.bairro, user.endereco))
+        oferta._estabelecimento_id = user.cnpj
         tempo_valido = oferta.validarJanelaRetirada()
 
         if tempo_valido:

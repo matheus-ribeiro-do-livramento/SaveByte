@@ -34,6 +34,8 @@ class TelaEstabelecimento:
             [sg.Input(key="-EMAIL-", size=(44, 1))],
             [sg.Text("Endereço completo", font=("Helvetica", 9, "bold"))],
             [sg.Input(key="-ENDERECO-", size=(44, 1))],
+            [sg.Text("Bairro", font=("Helvetica", 9, "bold")), sg.Push(), sg.Text("Cidade", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-BAIRRO-", size=(20, 1)), sg.Push(), sg.Input(key="-CIDADE-", size=(20, 1))],
             [sg.Text("CNPJ (somente números)", font=("Helvetica", 9, "bold"))],
             [sg.Input(key="-CNPJ-", size=(44, 1))],
             [sg.Text("Tipo de estabelecimento", font=("Helvetica", 9, "bold"))],
@@ -44,18 +46,20 @@ class TelaEstabelecimento:
             [sg.Button("Cancelar", key="-CANCELAR-", button_color=(COR_TEXTO_SEC, COR_FUNDO), border_width=0)]
         ]
 
-        window = sg.Window("SaveByte - Novo Estabelecimento", layout, size=(440, 610))
+        window = sg.Window("SaveByte - Novo Estabelecimento", layout, size=(440, 670))
         while True:
             event, values = window.read()
             if event in (sg.WIN_CLOSED, "-CANCELAR-"):
                 window.close()
-                return {"nome": "", "email": "", "endereco": "", "cnpj": "", "tipo": "", "senha": ""}
+                return None
 
             if event == "-SALVAR-":
                 dados = {
                     "nome": values["-NOME-"].strip(),
                     "email": values["-EMAIL-"].strip(),
                     "endereco": values["-ENDERECO-"].strip(),
+                    "bairro": values["-BAIRRO-"].strip(),
+                    "cidade": values["-CIDADE-"].strip(),
                     "cnpj": values["-CNPJ-"].strip(),
                     "tipo": values["-TIPO-"].strip(),
                     "senha": values["-SENHA-"].strip(),
@@ -64,6 +68,35 @@ class TelaEstabelecimento:
                     window.close()
                     return dados
                 sg.popup_error("Preencha todos os campos obrigatórios!", title="SaveByte")
+
+    def completar_localizacao(self, nome_fantasia: str, endereco_atual: str = "", bairro_atual: str = "", cidade_atual: str = ""):
+        layout = [
+            *cabecalho_savebyte(
+                "Completar localização",
+                f"Informe bairro e cidade de '{nome_fantasia}' para que consumidores próximos vejam suas ofertas."
+            ),
+            [sg.Text("Endereço", font=("Helvetica", 9, "bold"))],
+            [sg.Input(endereco_atual, key="-ENDERECO-", size=(42, 1))],
+            [sg.Text("Bairro", font=("Helvetica", 9, "bold"))],
+            [sg.Input(bairro_atual, key="-BAIRRO-", size=(42, 1))],
+            [sg.Text("Cidade", font=("Helvetica", 9, "bold"))],
+            [sg.Input(cidade_atual, key="-CIDADE-", size=(42, 1))],
+            [botao_verde("Salvar localização", "-SALVAR-", size=(36, 1))],
+        ]
+        window = sg.Window("Localização do Estabelecimento", layout, size=(430, 390))
+        while True:
+            event, values = window.read()
+            if event in (sg.WIN_CLOSED, None):
+                window.close()
+                return None
+            if event == "-SALVAR-":
+                bairro = values["-BAIRRO-"].strip()
+                cidade = values["-CIDADE-"].strip()
+                endereco = values["-ENDERECO-"].strip() or endereco_atual
+                if bairro and cidade:
+                    window.close()
+                    return {"endereco": endereco, "bairro": bairro, "cidade": cidade}
+                sg.popup_error("Informe bairro e cidade para continuar.", title="SaveByte")
 
     def pegaDadosLogin(self):
         layout = [

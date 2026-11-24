@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta
 from model.enums import StatusOferta
+from model.localizacao import Localizacao
 
 
 class OfertaRelampago:
     def __init__(self, id: int, titulo: str, descricao: str, nome_estabelecimento: str,
                  original: float, desconto: float, quantidade: int,
-                 janela_inicio: datetime, janela_fim: datetime):
+                 janela_inicio: datetime, janela_fim: datetime,
+                 localizacao: Localizacao = None):
         self._id = id
         self._titulo = titulo
         self._descricao = descricao
@@ -16,6 +18,7 @@ class OfertaRelampago:
         self._inicio = janela_inicio
         self._fim = janela_fim
         self._status = StatusOferta.DISPONIVEL
+        self._localizacao = localizacao or Localizacao("", "", "")
 
     @property
     def id(self):
@@ -96,6 +99,14 @@ class OfertaRelampago:
     @status.setter
     def status(self, status):
         self._status = status
+
+    @property
+    def localizacao(self):
+        return self._localizacao
+
+    @localizacao.setter
+    def localizacao(self, localizacao: Localizacao):
+        self._localizacao = localizacao
 
     def decrementar_quantidade(self):
         self._quantidade -= 1
