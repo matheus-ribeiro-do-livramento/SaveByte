@@ -26,6 +26,7 @@ class ControladorSistema:
         self._controlador_penalidade = ControladorPenalidade(self)
         self._consumidores_com_dados_exemplo = set()
 
+        self._sincronizar_vinculos_iniciais()
         self._tela_sistema = TelaSistema()
         self._carrega_dados_exemplo()
 
@@ -38,12 +39,33 @@ class ControladorSistema:
         return self._estabelecimento_logado
 
     @property
+    def controlador_estabelecimento(self):
+        return self._controlador_estabelecimento
+
+    @property
+    def controlador_oferta(self):
+        return self._controlador_oferta
+
+    @property
     def controlador_reservas(self):
         return self._controlador_reservas
 
     @property
     def controlador_penalidade(self):
         return self._controlador_penalidade
+
+    def _sincronizar_vinculos_iniciais(self):
+        self._controlador_oferta.sincronizar_ofertas_de_reservas(
+            self._controlador_reservas.todas_reservas()
+        )
+        for estabelecimento in self._controlador_estabelecimento.listar_estabelecimentos():
+            self.vincular_estabelecimento(estabelecimento)
+
+    def vincular_estabelecimento(self, estabelecimento):
+        if estabelecimento is None:
+            return
+        self._controlador_oferta.vincular_estabelecimento_nas_ofertas(estabelecimento)
+        self._controlador_reservas.vincular_estabelecimento_nas_reservas(estabelecimento)
 
     def definir_consumidor_logado(self, consumidor):
         self._consumidor_logado = consumidor

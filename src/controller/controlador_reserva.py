@@ -64,11 +64,19 @@ class ControladorReservas():
             StatusReserva(dados["status"]),
             token,
         )
+        reserva._estabelecimento_id = dados.get("estabelecimento_id")
         return reserva
 
-    def _reserva_para_documento(self, reserva):
+    def recarregar_reservas(self):
+        self._reservas = [self._documento_para_reserva(d) for d in self._metodos.listar()]
+
+    def _normalizar_nome(self, nome):
+        return (nome or "").strip().casefold()
+
+    def _reserva_para_documento(self, reserva, estabelecimento=None):
         consumidor = reserva.consumidor
         oferta = reserva.oferta
+        estabelecimento_id = estabelecimento.cnpj if estabelecimento else oferta.nome_estabelecimento
         return {
             "id": reserva.id,
             "consumidor_id": consumidor.id,
@@ -87,7 +95,7 @@ class ControladorReservas():
                 "penalidade": consumidor.penalidade,
                 "bloqueadoAte": consumidor.bloqueadoAte,
             },
-            "estabelecimento_id": oferta.nome_estabelecimento,
+            "estabelecimento_id": estabelecimento_id,
             "oferta": {
                 "id": oferta.id,
                 "titulo": oferta.titulo,
@@ -110,12 +118,36 @@ class ControladorReservas():
             },
         }
 
+    def todas_reservas(self):
+        return list(self._reservas)
+
+    def vincular_estabelecimento_nas_reservas(self, estabelecimento):
+        alvo = self._normalizar_nome(estabelecimento.nome_fantasia)
+        for reserva in self._reservas:
+            if self._normalizar_nome(reserva.oferta.nome_estabelecimento) == alvo:
+                reserva.oferta.nome_estabelecimento = estabelecimento.nome_fantasia
+                self._metodos.atualizar_por_filtro(
+                    {"id": reserva.id, "consumidor_id": reserva.consumidor.id},
+                    {
+                        "estabelecimento_id": estabelecimento.cnpj,
+                        "oferta.nome_estabelecimento": estabelecimento.nome_fantasia,
+                    },
+                )
+
     def adicionar_reserva(self, reserva):
+        estabelecimento = self._controlador_sistema.controlador_estabelecimento.buscar_por_nome_fantasia(
+            reserva.oferta.nome_estabelecimento
+        )
+        if estabelecimento is not None:
+            reserva.oferta.nome_estabelecimento = estabelecimento.nome_fantasia
+        self._controlador_sistema.controlador_oferta.registrar_oferta_se_nao_existir(
+            reserva.oferta, estabelecimento
+        )
         if not self._metodos.buscar_um({
             "id": reserva.id,
             "consumidor_id": reserva.consumidor.id,
         }):
-            self._metodos.inserir(self._reserva_para_documento(reserva))
+            self._metodos.inserir(self._reserva_para_documento(reserva, estabelecimento))
         if not any(
             r.id == reserva.id and r.consumidor.id == reserva.consumidor.id
             for r in self._reservas
@@ -153,9 +185,13 @@ class ControladorReservas():
             ]
         return excluido
 
-    def pega_reservas_do_consumidor(self):
-        consumidor = self._controlador_sistema.consumidor_logado
-        return [r for r in self._reservas if r.consumidor.id == consumidor.id]
+    def pega_reservas_do_consumidor(self, id_consumidor=None):
+        if id_consumidor is None:
+            consumidor = self._controlador_sistema.consumidor_logado
+            if consumidor is None:
+                return []
+            id_consumidor = consumidor.id
+        return [r for r in self._reservas if r.consumidor.id == id_consumidor]
 
     def pega_reserva_por_id(self, id: int):
         for reserva in self.pega_reservas_do_consumidor():
@@ -163,11 +199,34 @@ class ControladorReservas():
                 return reserva
         return None
 
-    def verificar_reserva(self, id):
+    def pega_reservas_da_oferta(self, id_oferta, nome_estabelecimento=None, estabelecimento_id=None):
+        alvo_nome = self._normalizar_nome(nome_estabelecimento) if nome_estabelecimento is not None else None
+        alvo_id = str(estabelecimento_id).strip() if estabelecimento_id is not None else None
+        id_alvo = str(id_oferta).strip()
+        resultado = []
         for r in self._reservas:
-            if r.oferta.id == id:
-                return True
-        return False
+            if str(r.oferta.id).strip() != id_alvo:
+                continue
+            if alvo_nome is None and alvo_id is None:
+                resultado.append(r)
+                continue
+            mesmo_nome = (
+                alvo_nome is not None
+                and self._normalizar_nome(r.oferta.nome_estabelecimento) == alvo_nome
+            )
+            estab_doc_id = getattr(r, "_estabelecimento_id", None)
+            mesmo_estab_id = (
+                alvo_id is not None
+                and estab_doc_id is not None
+                and str(estab_doc_id).strip() == alvo_id
+            )
+            if mesmo_nome or mesmo_estab_id:
+                resultado.append(r)
+        return resultado
+
+    def verificar_reserva(self, id, nome_estabelecimento=None, estabelecimento_id=None):
+        self.recarregar_reservas()
+        return len(self.pega_reservas_da_oferta(id, nome_estabelecimento, estabelecimento_id)) > 0
 
     def _dados_reserva(self, reserva):
         oferta = reserva.oferta
@@ -221,7 +280,7 @@ class ControladorReservas():
         else:
             reserva.cancelar()
             self._metodos.atualizar_varios(
-                {"id": reserva.id},
+                {"id": reserva.id, "consumidor_id": reserva.consumidor.id},
                 {"status": reserva.status.value},
             )
             self._tela_reserva.mostra_mensagem("Reserva cancelada com sucesso!")
@@ -239,6 +298,7 @@ class ControladorReservas():
     def abre_tela(self):
         self._continua = True
         while self._continua:
+            self.recarregar_reservas()
             reservas = self.pega_reservas_do_consumidor()
             atuais = [self._dados_reserva(r) for r in reservas if r.esta_pendente()]
             anteriores = [self._dados_reserva(r) for r in reservas if not r.esta_pendente()]
@@ -259,15 +319,17 @@ class ControladorReservas():
     def validar_resgate(self, codigo: str):
         # Feito por Augusto
 
+        self.recarregar_reservas()
         tela = TelaResgate()
 
         estabelecimento = self._controlador_sistema.estabelecimento_logado
+        alvo = self._normalizar_nome(estabelecimento.nome_fantasia) if estabelecimento is not None else ""
         reserva = next(
             (
                 reserva
                 for reserva in self._reservas
                 if estabelecimento is not None
-                and reserva.oferta.nome_estabelecimento == estabelecimento.nome_fantasia
+                and self._normalizar_nome(reserva.oferta.nome_estabelecimento) == alvo
                 and reserva.token.codigo == codigo
             ),
             None,
@@ -281,8 +343,9 @@ class ControladorReservas():
 
         if reserva.confirmarRetirada(codigo):
             self._metodos.atualizar_varios(
-                {"id": reserva.id},
+                {"id": reserva.id, "consumidor_id": reserva.consumidor.id},
                 {
+                    "estabelecimento_id": estabelecimento.cnpj,
                     "status": reserva.status.value,
                     "token": {
                         "codigo": reserva.token.codigo,
@@ -291,21 +354,19 @@ class ControladorReservas():
                     },
                 },
             )
+            self._controlador_sistema.controlador_oferta.registrar_resgate_oferta(
+                reserva.oferta, estabelecimento
+            )
             tela.mostra_mensagem("Resgate validado com sucesso!")
         else:
             if reserva.status == StatusReserva.EXPIRADA:
                 self._metodos.atualizar_varios(
-                    {"id": reserva.id},
+                    {"id": reserva.id, "consumidor_id": reserva.consumidor.id},
                     {"status": reserva.status.value},
                 )
             tela.mostra_mensagem("Erro: Token inválido ou expirado.")
 
     def atualizar_status_reserva(self, id_reserva: str, novo_status: str):
-        return self._bd.atualizar(id_reserva, {"status": novo_status})
-    #Feito por Gabriel
-
-    def pega_reservas_do_consumidor(self, id_consumidor: str):
-        documentos = self._bd.listar({"consumidor_id": id_consumidor})
-        return [Reserva.from_dict(doc) for doc in documentos]
+        return self._metodos.atualizar(id_reserva, {"status": novo_status})
     #Feito por Gabriel
 # feito por matheus

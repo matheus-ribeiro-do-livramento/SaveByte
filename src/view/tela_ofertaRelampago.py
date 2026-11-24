@@ -49,32 +49,80 @@ class TelaOfertaRelampago:
                 except ValueError:
                     sg.popup_error("Verifique os valores numéricos e o formato de hora (HH:MM).")
 
-    def exibirOfertas(self, ofertas):
-        """Corrige inclusive o return dentro do loop que havia no código de terminal e exibe em cards."""
+    def exibirOfertas(self, ofertas, reservas_por_oferta=None):
+        """Exibe as ofertas do estabelecimento em cards, incluindo status e reservas vinculadas."""
         if not ofertas:
             sg.popup_ok("Nenhuma oferta encontrada.", title="Suas Ofertas")
             return False
 
+        reservas_por_oferta = reservas_por_oferta or {}
         cards = []
         for of in ofertas:
+            status_texto = of.status.value.capitalize() if hasattr(of.status, "value") else str(of.status)
+            reservas_oferta = reservas_por_oferta.get(of.id, [])
+
+            detalhes_col = [
+                [sg.Text(f"#{of.id} - {of.titulo}", font=("Helvetica", 11, "bold"), background_color=COR_CARD)],
+                [sg.Text(of.descricao, font=("Helvetica", 8), text_color=COR_TEXTO_SEC, background_color=COR_CARD)],
+                [sg.Text(
+                    f"R$ {of.desconto:.2f} (De R$ {of.original:.2f}) • Qtd: {of.quantidade} • {status_texto}",
+                    font=("Helvetica", 9, "bold"),
+                    text_color=COR_VERDE,
+                    background_color=COR_CARD,
+                )],
+            ]
+
+            if reservas_oferta:
+                detalhes_col.append([
+                    sg.Text(
+                        f"Reservas vinculadas ({len(reservas_oferta)}) • 🔒 Bloqueada para edição/exclusão:",
+                        font=("Helvetica", 8, "bold"),
+                        text_color=COR_TEXTO,
+                        background_color=COR_CARD,
+                        pad=((5, 0), (4, 0)),
+                    )
+                ])
+                for res in reservas_oferta:
+                    st = res.status.value.upper() if hasattr(res.status, "value") else str(res.status).upper()
+                    nome_cli = res.consumidor.nome or f"Consumidor #{res.consumidor.id}"
+                    detalhes_col.append([
+                        sg.Text(
+                            f"• #{res.id} {nome_cli} — {st}",
+                            font=("Helvetica", 8),
+                            text_color=COR_TEXTO_SEC,
+                            background_color=COR_CARD,
+                        )
+                    ])
+            else:
+                texto_sem_res = (
+                    "Sem reservas vinculadas"
+                    if status_texto.lower() == "disponivel"
+                    else "Sem reservas vinculadas • 🔒 Bloqueada para edição/exclusão"
+                )
+                detalhes_col.append([
+                    sg.Text(
+                        texto_sem_res,
+                        font=("Helvetica", 8),
+                        text_color=COR_TEXTO_SEC,
+                        background_color=COR_CARD,
+                        pad=((5, 0), (4, 0)),
+                    )
+                ])
+
             card = sg.Frame("", [
                 [
                     sg.Text("🛍️", font=("Helvetica", 22), background_color=COR_VERDE_CLARO, pad=(12, 12)),
-                    sg.Column([
-                        [sg.Text(f"#{of.id} - {of.titulo}", font=("Helvetica", 11, "bold"), background_color=COR_CARD)],
-                        [sg.Text(of.descricao, font=("Helvetica", 8), text_color=COR_TEXTO_SEC, background_color=COR_CARD)],
-                        [sg.Text(f"R$ {of.desconto:.2f} (De R$ {of.original:.2f}) • Qtd: {of.quantidade}", font=("Helvetica", 9, "bold"), text_color=COR_VERDE, background_color=COR_CARD)]
-                    ], background_color=COR_CARD)
+                    sg.Column(detalhes_col, background_color=COR_CARD)
                 ]
             ], background_color=COR_CARD, relief=sg.RELIEF_SOLID, expand_x=True, pad=(4, 4))
             cards.append([card])
 
         layout = [
             *cabecalho_savebyte("Ofertas ativas", "Acompanhe reservas e horários das ofertas em andamento."),
-            [sg.Column(cards, scrollable=True, vertical_scroll_only=True, size=(400, 380), background_color=COR_FUNDO)],
+            [sg.Column(cards, scrollable=True, vertical_scroll_only=True, size=(430, 390), background_color=COR_FUNDO)],
             [botao_verde("Fechar", "-FECHAR-", size=(34, 1))]
         ]
-        window = sg.Window("Suas Ofertas", layout, size=(430, 540))
+        window = sg.Window("Suas Ofertas", layout, size=(460, 560))
         window.read()
         window.close()
         return True

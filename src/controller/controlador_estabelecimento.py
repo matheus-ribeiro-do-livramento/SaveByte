@@ -66,7 +66,18 @@ class ControladorEstabelecimento ():
         
         self._metodos.inserir(self._estabelecimento_para_documento(estabelecimento))
         self.__estabelecimentos.append(estabelecimento)
+        self.__controlador_sistema.vincular_estabelecimento(estabelecimento)
         return True
+
+    def listar_estabelecimentos(self):
+        return list(self.__estabelecimentos)
+
+    def buscar_por_nome_fantasia(self, nome_fantasia: str):
+        alvo = (nome_fantasia or "").strip().casefold()
+        for est in self.__estabelecimentos:
+            if (est.nome_fantasia or "").strip().casefold() == alvo:
+                return est
+        return None
 
     def iniciarLogin(self):
         dados = self.__tela_estabelecimento.pegaDadosLogin()
@@ -133,6 +144,7 @@ class ControladorEstabelecimento ():
         user = self.iniciarLogin()
         if user:
             self.__controlador_sistema.definir_estabelecimento_logado(user)
+            self.__controlador_sistema.vincular_estabelecimento(user)
             self.abrir_gerenciador_ofertas()
 
     def abrir_gerenciador_ofertas(self):
@@ -148,7 +160,7 @@ class ControladorEstabelecimento ():
             while True:
                 opcao = self.__tela_estabelecimento.menu_gerenciar_ofertas()
                 if opcao == 0:
-                    self._estabelecimento_logado = None 
+                    self.__controlador_sistema.definir_estabelecimento_logado(None)
                     print("\nLogout do estabelecimento efetuado.")
                     break
                 elif opcao in opcoes_oferta:

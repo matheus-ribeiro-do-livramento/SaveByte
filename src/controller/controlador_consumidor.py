@@ -81,7 +81,7 @@ class ControladorConsumidor:
         if self.cadastrar_consumidor(dados):
             self._tela_consumidor.mensagem("Cadastro efetuado com sucesso!")
             return True
-        self._tela_consumidor.mensagem("Erro: e-mail já cadastrado.")
+        self._tela_consumidor.mensagem("Erro: dados inválidos.")
         return False
 
     def realizar_login(self, dados):
