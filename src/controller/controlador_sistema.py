@@ -71,11 +71,11 @@ class ControladorSistema:
         for estabelecimento in self._controlador_estabelecimento.listar_estabelecimentos():
             self.vincular_estabelecimento(estabelecimento)
 
-    def vincular_estabelecimento(self, estabelecimento):
+    def vincular_estabelecimento(self, estabelecimento, nome_antigo=None):
         if estabelecimento is None:
             return
-        self._controlador_oferta.vincular_estabelecimento_nas_ofertas(estabelecimento)
-        self._controlador_reservas.vincular_estabelecimento_nas_reservas(estabelecimento)
+        self._controlador_oferta.vincular_estabelecimento_nas_ofertas(estabelecimento, nome_antigo=nome_antigo)
+        self._controlador_reservas.vincular_estabelecimento_nas_reservas(estabelecimento, nome_antigo=nome_antigo)
 
     def definir_consumidor_logado(self, consumidor):
         self._consumidor_logado = consumidor

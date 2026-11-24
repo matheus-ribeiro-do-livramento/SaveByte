@@ -151,8 +151,101 @@ class TelaEstabelecimento:
             "-EXCLUIR-": 4,
             "-VALIDAR-": 5,
             "-NAV_RETIRADA-": 5,  # Clicar na aba "Retirada" da barra inferior também abre a validação!
+            "-NAV_PERFIL_EST-": 6,
+            "-NAV_OFERTAS-": 7,
         }
         return mapa_opcoes.get(event, 0)
+
+    def perfil_estabelecimento(self, estabelecimento):
+        tipos = ["padaria", "restaurante", "mercado"]
+        tipo_atual = (
+            estabelecimento.tipo.value
+            if hasattr(estabelecimento.tipo, "value")
+            else str(estabelecimento.tipo)
+        )
+        if tipo_atual not in tipos:
+            tipo_atual = "padaria"
+
+        card_identidade = sg.Frame("", [
+            [sg.Text("🏪", font=("Helvetica", 24), background_color=COR_CARD)],
+            [sg.Text(estabelecimento.nome_fantasia or "", font=("Helvetica", 14, "bold"), text_color=COR_TEXTO, background_color=COR_CARD)],
+            [sg.Text(f"CNPJ: {estabelecimento.cnpj} • {estabelecimento.email}", font=("Helvetica", 9), text_color=COR_TEXTO_SEC, background_color=COR_CARD)],
+        ], background_color=COR_CARD, relief=sg.RELIEF_SOLID, expand_x=True, pad=(4, 6))
+
+        campos_scroll = [
+            [card_identidade],
+            [sg.Text("Nome fantasia", font=("Helvetica", 9, "bold"))],
+            [sg.Input(estabelecimento.nome_fantasia or "", key="-NOME-", size=(42, 1))],
+            [sg.Text("CNPJ (não alterável)", font=("Helvetica", 9, "bold"))],
+            [sg.Input(
+                str(estabelecimento.cnpj or ""),
+                key="-CNPJ-",
+                size=(42, 1),
+                disabled=True,
+                disabled_readonly_background_color="#F3F4F6",
+                disabled_readonly_text_color=COR_TEXTO_SEC,
+            )],
+            [sg.Text("E-mail comercial (não alterável)", font=("Helvetica", 9, "bold"))],
+            [sg.Input(
+                estabelecimento.email or "",
+                key="-EMAIL-",
+                size=(42, 1),
+                disabled=True,
+                disabled_readonly_background_color="#F3F4F6",
+                disabled_readonly_text_color=COR_TEXTO_SEC,
+            )],
+            [sg.Text("Tipo de estabelecimento", font=("Helvetica", 9, "bold"))],
+            [sg.Combo(tipos, default_value=tipo_atual, key="-TIPO-", readonly=True, size=(40, 1), background_color=COR_CARD)],
+            [sg.Text("Endereço completo", font=("Helvetica", 9, "bold"))],
+            [sg.Input(estabelecimento.endereco or "", key="-ENDERECO-", size=(42, 1))],
+            [sg.Text("Bairro", font=("Helvetica", 9, "bold")), sg.Push(), sg.Text("Cidade", font=("Helvetica", 9, "bold"))],
+            [sg.Input(estabelecimento.bairro or "", key="-BAIRRO-", size=(19, 1)), sg.Push(), sg.Input(estabelecimento.cidade or "", key="-CIDADE-", size=(19, 1))],
+            [sg.Text("Ao alterar o endereço, as ofertas ativas serão atualizadas automaticamente.", font=("Helvetica", 8), text_color=COR_TEXTO_SEC)],
+            [sg.HorizontalSeparator(pad=((0, 0), (8, 8)))],
+            [sg.Text("Alterar senha (opcional)", font=("Helvetica", 10, "bold"), text_color=COR_TEXTO)],
+            [sg.Text("Deixe os campos abaixo em branco para manter a senha atual.", font=("Helvetica", 8), text_color=COR_TEXTO_SEC)],
+            [sg.Text("Senha atual", font=("Helvetica", 9, "bold"))],
+            [sg.Input("", key="-SENHA_ATUAL-", password_char="*", size=(42, 1))],
+            [sg.Text("Nova senha", font=("Helvetica", 9, "bold"))],
+            [sg.Input("", key="-NOVA_SENHA-", password_char="*", size=(42, 1))],
+            [sg.Text("Confirmar nova senha", font=("Helvetica", 9, "bold"))],
+            [sg.Input("", key="-CONFIRMAR_SENHA-", password_char="*", size=(42, 1))],
+            [botao_verde("Salvar alterações", "-SALVAR-", size=(38, 1))],
+        ]
+
+        layout = [
+            *cabecalho_savebyte("Meu perfil", "Gerencie os dados cadastrais e a localização do seu estabelecimento."),
+            [sg.Column(campos_scroll, scrollable=True, vertical_scroll_only=True, size=(420, 440), background_color=COR_FUNDO)],
+            [sg.Button("← Voltar ao menu", key="-VOLTAR-", button_color=(COR_TEXTO_SEC, COR_FUNDO), border_width=0)],
+            nav_estabelecimento("perfil"),
+        ]
+
+        window = sg.Window("SaveByte - Meu Perfil", layout, size=(460, 700))
+        while True:
+            event, values = window.read()
+            if event in (sg.WIN_CLOSED, "-VOLTAR-", "-NAV_OFERTAS-"):
+                window.close()
+                return "ofertas"
+            if event == "-NAV_RETIRADA-":
+                window.close()
+                return "retirada"
+            if event == "-NAV_PERFIL_EST-":
+                continue
+            if event == "-SALVAR-":
+                dados = {
+                    "nome_fantasia": values["-NOME-"].strip(),
+                    "tipo": values["-TIPO-"].strip(),
+                    "endereco": values["-ENDERECO-"].strip(),
+                    "bairro": values["-BAIRRO-"].strip(),
+                    "cidade": values["-CIDADE-"].strip(),
+                    "senha_atual": values["-SENHA_ATUAL-"].strip(),
+                    "nova_senha": values["-NOVA_SENHA-"].strip(),
+                    "confirmar_senha": values["-CONFIRMAR_SENHA-"].strip(),
+                }
+                if all(dados[campo] for campo in ("nome_fantasia", "tipo", "endereco", "bairro", "cidade")):
+                    window.close()
+                    return {"acao": "editar", "dados": dados}
+                sg.popup_error("Nome fantasia, tipo e localização são obrigatórios!", title="SaveByte")
 
     def mensagem(self, msg):
         sg.popup_ok(msg, title="SaveByte")

@@ -24,6 +24,7 @@ class ControladorPainelImpacto:
             "-NAV_EXPLORAR-": "explorar",
             "-NAV_RESERVAS-": "reservas",
             "-NAV_IMPACTO-": "impacto",
+            "-NAV_PERFIL-": "perfil",
         }
         return mapa_abas.get(evento)
 

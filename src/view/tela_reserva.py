@@ -102,7 +102,7 @@ class TelaReserva:
         if event == "-NAV_IMPACTO-":
             return ("impacto", None)
         if event == "-NAV_PERFIL-":
-            return ("em_breve", None)
+            return ("perfil", None)
         return ("voltar", None)
 
     def mostra_reserva_detalhes(self, dados_reserva):

@@ -216,11 +216,21 @@ class ControladorReservas():
     def todas_reservas(self):
         return list(self._reservas)
 
-    def vincular_estabelecimento_nas_reservas(self, estabelecimento):
-        alvo = self._normalizar_nome(estabelecimento.nome_fantasia)
+    def vincular_estabelecimento_nas_reservas(self, estabelecimento, nome_antigo=None):
+        alvo_novo = self._normalizar_nome(estabelecimento.nome_fantasia)
+        alvo_antigo = self._normalizar_nome(nome_antigo) if nome_antigo else None
+        cnpj_alvo = str(estabelecimento.cnpj).strip()
         for reserva in self._reservas:
-            if self._normalizar_nome(reserva.oferta.nome_estabelecimento) == alvo:
+            nome_res = self._normalizar_nome(reserva.oferta.nome_estabelecimento)
+            estab_id = getattr(reserva, "_estabelecimento_id", None)
+            mesmo_estab = (
+                nome_res == alvo_novo
+                or (alvo_antigo is not None and nome_res == alvo_antigo)
+                or (estab_id is not None and str(estab_id).strip() == cnpj_alvo)
+            )
+            if mesmo_estab:
                 reserva.oferta.nome_estabelecimento = estabelecimento.nome_fantasia
+                reserva._estabelecimento_id = estabelecimento.cnpj
                 self._metodos.atualizar_por_filtro(
                     {"id": reserva.id, "consumidor_id": reserva.consumidor.id},
                     {
@@ -390,7 +400,12 @@ class ControladorReservas():
         
         tela = TelaResgate()
         codigo = tela.solicitar_token()
+        if getattr(tela, "ultima_navegacao", None) == "-NAV_PERFIL_EST-":
+            return "perfil"
+        if not codigo:
+            return "ofertas"
         self.validar_resgate(codigo)
+        return "ofertas"
 
     def abre_tela(self):
         self._continua = True
@@ -411,6 +426,9 @@ class ControladorReservas():
             elif acao == "impacto":
                 self._continua = False
                 return "impacto"
+            elif acao == "perfil":
+                self._continua = False
+                return "perfil"
             elif acao == "atualizar":
                 continue
             elif acao == "em_breve":

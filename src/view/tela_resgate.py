@@ -49,9 +49,11 @@ class TelaResgate:
         window["-DIG_0-"].set_focus()
 
         codigo_final = ""
+        self.ultima_navegacao = None
         while True:
             event, values = window.read()
             if event in (sg.WIN_CLOSED, "-NAV_OFERTAS-", "-NAV_PERFIL_EST-"):
+                self.ultima_navegacao = event
                 break
 
             # Avança o foco automaticamente ao digitar 1 caractere em cada quadrado

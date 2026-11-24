@@ -160,6 +160,9 @@ class ControladorConsumidor:
     def painel_impacto(self):
         self._navegar_abas("impacto")
 
+    def meu_perfil(self):
+        self._navegar_abas("perfil")
+
     def em_breve(self):
         self._tela_consumidor.mensagem("Funcionalidade em desenvolvimento.")
 
@@ -211,21 +214,14 @@ class ControladorConsumidor:
         lista_opcoes = {
             1: self.minhas_reservas,
             2: self.explorar_ofertas,
-            3: self.perfil_consumidor,
+            3: self.meu_perfil,
             4: self.painel_impacto,
             0: sair_da_conta,
         }
         while continua_menu:
             opcao = self._tela_consumidor.tela_opcoes()
             if opcao in lista_opcoes:
-                resultado = lista_opcoes[opcao]()
-                if opcao == 3:
-                    if resultado == "explorar":
-                        self.explorar_ofertas()
-                    elif resultado == "reservas":
-                        self.minhas_reservas()
-                    elif resultado == "impacto":
-                        self.painel_impacto()
+                lista_opcoes[opcao]()
             else:
                 self._tela_consumidor.mensagem("Opção inválida.")
 

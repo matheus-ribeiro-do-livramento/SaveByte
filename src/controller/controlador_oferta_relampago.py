@@ -162,36 +162,95 @@ class ControladorOfertaRelampago():
         for reserva in reservas:
             self.registrar_oferta_se_nao_existir(reserva.oferta)
 
-    def vincular_estabelecimento_nas_ofertas(self, estabelecimento):
-        alvo = self._normalizar_nome(estabelecimento.nome_fantasia)
+    def _pertence_ao_estabelecimento(self, oferta, estabelecimento, nome_antigo=None):
+        alvo_novo = self._normalizar_nome(estabelecimento.nome_fantasia)
+        alvo_antigo = self._normalizar_nome(nome_antigo) if nome_antigo else None
+        estab_id = getattr(oferta, "_estabelecimento_id", None)
+        nome_oferta = self._normalizar_nome(oferta.nome_estabelecimento)
+        return (
+            nome_oferta == alvo_novo
+            or (alvo_antigo is not None and nome_oferta == alvo_antigo)
+            or (estab_id is not None and str(estab_id).strip() == str(estabelecimento.cnpj).strip())
+        )
+
+    def _oferta_esta_ativa(self, oferta):
+        return (
+            oferta.status in (StatusOferta.DISPONIVEL, StatusOferta.ESGOTADA)
+            and not self._oferta_expirada_por_tempo(oferta)
+        )
+
+    def vincular_estabelecimento_nas_ofertas(self, estabelecimento, nome_antigo=None):
         loc_doc = {
             "cidade": estabelecimento.cidade,
             "bairro": estabelecimento.bairro,
             "endereco": estabelecimento.endereco,
         }
         for of in self._ofertas:
-            estab_id = getattr(of, "_estabelecimento_id", None)
-            mesmo_estab = (
-                self._normalizar_nome(of.nome_estabelecimento) == alvo
-                or (estab_id is not None and str(estab_id).strip() == str(estabelecimento.cnpj).strip())
-            )
-            if mesmo_estab:
-                nome_antigo = of.nome_estabelecimento
+            if self._pertence_ao_estabelecimento(of, estabelecimento, nome_antigo=nome_antigo):
+                nome_no_banco = of.nome_estabelecimento
                 of.nome_estabelecimento = estabelecimento.nome_fantasia
                 of._estabelecimento_id = estabelecimento.cnpj
+                campos_atualizacao = {
+                    "estabelecimento_id": estabelecimento.cnpj,
+                    "nome_estabelecimento": estabelecimento.nome_fantasia,
+                }
+                sem_localizacao = not of.localizacao or not (
+                    (of.localizacao.cidade or "").strip()
+                    and (of.localizacao.bairro or "").strip()
+                    and (of.localizacao.endereco or "").strip()
+                )
+                if self._oferta_esta_ativa(of) or sem_localizacao:
+                    of.localizacao = Localizacao(
+                        estabelecimento.cidade,
+                        estabelecimento.bairro,
+                        estabelecimento.endereco,
+                    )
+                    campos_atualizacao["localizacao"] = loc_doc
+                self._metodos.atualizar_varios(
+                    {"id": of.id, "nome_estabelecimento": nome_no_banco},
+                    campos_atualizacao,
+                )
+
+    def atualizar_ofertas_do_estabelecimento(self, estabelecimento, nome_antigo=None, atualizar_localizacao=True):
+        """
+        RN04: Atualiza a localização de todas as Ofertas Relâmpago ativas vinculadas ao estabelecimento
+        quando o endereço/localização é alterado, mantendo também o nome fantasia sincronizado.
+        """
+        self.recarregar_ofertas()
+        loc_doc = {
+            "cidade": estabelecimento.cidade,
+            "bairro": estabelecimento.bairro,
+            "endereco": estabelecimento.endereco,
+        }
+        ofertas_ativas_atualizadas = 0
+        for of in self._ofertas:
+            if not self._pertence_ao_estabelecimento(of, estabelecimento, nome_antigo=nome_antigo):
+                continue
+
+            nome_no_banco = of.nome_estabelecimento
+            of.nome_estabelecimento = estabelecimento.nome_fantasia
+            of._estabelecimento_id = estabelecimento.cnpj
+
+            campos_atualizacao = {
+                "estabelecimento_id": estabelecimento.cnpj,
+                "nome_estabelecimento": estabelecimento.nome_fantasia,
+            }
+
+            if atualizar_localizacao and self._oferta_esta_ativa(of):
                 of.localizacao = Localizacao(
                     estabelecimento.cidade,
                     estabelecimento.bairro,
                     estabelecimento.endereco,
                 )
-                self._metodos.atualizar_varios(
-                    {"id": of.id, "nome_estabelecimento": nome_antigo},
-                    {
-                        "estabelecimento_id": estabelecimento.cnpj,
-                        "nome_estabelecimento": estabelecimento.nome_fantasia,
-                        "localizacao": loc_doc,
-                    },
-                )
+                campos_atualizacao["localizacao"] = loc_doc
+                ofertas_ativas_atualizadas += 1
+
+            self._metodos.atualizar_varios(
+                {"id": of.id, "nome_estabelecimento": nome_no_banco},
+                campos_atualizacao,
+            )
+
+        return ofertas_ativas_atualizadas
 
     def registrar_resgate_oferta(self, oferta_reserva, estabelecimento=None, decrementar_estoque=True):
         oferta = self.registrar_oferta_se_nao_existir(oferta_reserva, estabelecimento)
@@ -351,6 +410,8 @@ class ControladorOfertaRelampago():
                 return "reservas"
             if acao == "impacto":
                 return "impacto"
+            if acao == "perfil":
+                return "perfil"
             if acao == "em_breve":
                 self._telaExplorar.mostra_mensagem("Funcionalidade em desenvolvimento.")
             elif acao == "atualizar":
