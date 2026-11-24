@@ -202,7 +202,7 @@ class TelaExplorar:
         if event == "-NAV_PERFIL-":
             return ("perfil", None)
         if event == "-NAV_IMPACTO-":
-            return ("em_breve", None)
+            return ("impacto", None)
         return ("voltar", None)
 
     def mostra_mensagem(self, msg: str):

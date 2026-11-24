@@ -411,6 +411,9 @@ class ControladorReservas():
             elif acao == "perfil":
                 self._continua = False
                 return "perfil"
+            elif acao == "impacto":
+                self._continua = False
+                return "impacto"
             elif acao == "atualizar":
                 continue
             elif acao == "em_breve":

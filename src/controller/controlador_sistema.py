@@ -56,6 +56,10 @@ class ControladorSistema:
     def controlador_penalidade(self):
         return self._controlador_penalidade
 
+    @property
+    def controlador_painel_impacto(self):
+        return self._controlador_painel_impacto
+
     def _sincronizar_vinculos_iniciais(self):
         self._controlador_oferta.sincronizar_ofertas_de_reservas(
             self._controlador_reservas.todas_reservas()
@@ -162,7 +166,7 @@ class ControladorSistema:
         self._controlador_estabelecimento.abre_tela_cadastro_ou_login()
 
     def abrir_painel_impacto(self, consumidor):
-        self.__controlador_painel_impacto.abrir_tela(consumidor)
+        self._controlador_painel_impacto.abrir_tela(consumidor)
 
     def encerra_sistema(self):
         exit(0)

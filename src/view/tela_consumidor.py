@@ -98,6 +98,8 @@ class TelaConsumidor:
                 return 3
             if event == "-NAV_IMPACTO-":
                 return 4
+            if event == "-IMPACTO-":
+                return 4
             return 0
 
     def perfil_consumidor(self, consumidor):

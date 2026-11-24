@@ -210,8 +210,8 @@ class ControladorConsumidor:
         lista_opcoes = {
             1: self.minhas_reservas,
             2: self.explorar_ofertas,
-            3: self.painel_impacto,
-            4: self.perfil_consumidor,
+            3: self.perfil_consumidor,
+            4: self.painel_impacto,
             0: sair_da_conta,
         }
         while continua_menu:
@@ -224,7 +224,7 @@ class ControladorConsumidor:
                     elif resultado == "reservas":
                         self.minhas_reservas()
                     elif resultado == "impacto":
-                        self.em_breve()
+                        self.painel_impacto()
             else:
                 self._tela_consumidor.mensagem("Opção inválida.")
 

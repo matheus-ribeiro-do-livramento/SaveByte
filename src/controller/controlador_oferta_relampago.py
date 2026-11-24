@@ -351,6 +351,8 @@ class ControladorOfertaRelampago():
                 return "reservas"
             if acao == "perfil":
                 return "perfil"
+            if acao == "impacto":
+                return "impacto"
             if acao == "em_breve":
                 self._telaExplorar.mostra_mensagem("Funcionalidade em desenvolvimento.")
             elif acao == "atualizar":
