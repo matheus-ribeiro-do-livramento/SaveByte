@@ -90,17 +90,17 @@ class TelaConsumidor:
         event, _ = window.read()
         window.close()
 
-            if event in ("-RESERVAS-", "-NAV_RESERVAS-"):
-                return 1
-            if event in ("-EXPLORAR-", "-NAV_EXPLORAR-"):
-                return 2
-            if event == "-NAV_PERFIL-":
-                return 3
-            if event == "-NAV_IMPACTO-":
-                return 4
-            if event == "-IMPACTO-":
-                return 4
-            return 0
+        if event in ("-RESERVAS-", "-NAV_RESERVAS-"):
+            return 1
+        if event in ("-EXPLORAR-", "-NAV_EXPLORAR-"):
+            return 2
+        if event == "-NAV_PERFIL-":
+            return 3
+        if event == "-NAV_IMPACTO-":
+            return 4
+        if event == "-IMPACTO-":
+            return 4
+        return 0
 
     def perfil_consumidor(self, consumidor):
         localizacao = consumidor.localizacao
