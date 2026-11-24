@@ -70,11 +70,11 @@ class ControladorConsumidor:
         self._consumidor.append(consumidor)
         return True
 
-    def buscar_por_id(self, id_consumidor: str):
-        dados = self._bd.buscar_por_id(id_consumidor)
+    def buscar_por_id(self, id_consumidor):
+        dados = self._metodos.buscar_um({"id": id_consumidor})
         if not dados:
             return None
-        return Consumidor.from_dict(dados)
+        return self._documento_para_consumidor(dados)
 
     def iniciar_cadastro(self):
         dados = self._tela_consumidor.cadastro_consumidor()
@@ -128,6 +128,7 @@ class ControladorConsumidor:
             return None
         self._controlador_sistema.definir_consumidor_logado(consumidor)
         self._controlador_sistema._carrega_dados_exemplo()
+        self._controlador_sistema.controlador_penalidade.verificar_bloqueio_ativo(consumidor.id)
         self._tela_consumidor.mensagem(f"Login efetuado com sucesso! Bem-vindo, {consumidor.nome}.")
         self.interface_consumidor()
 
@@ -228,22 +229,33 @@ class ControladorConsumidor:
             else:
                 self._tela_consumidor.mensagem("Opção inválida.")
 
-    def bloquear_consumidor(self, id_consumidor: str, bloqueado_ate: datetime):
-        return self._bd.atualizar(
-            id_consumidor,
-            {
-                "status": "BLOQUEADO",
-                "bloqueado_ate": bloqueado_ate,
-            },
+    def atualizar_penalidades_contador(self, id_consumidor, total_penalidades: int):
+        self._metodos.atualizar_por_filtro(
+            {"id": id_consumidor},
+            {"penalidade": total_penalidades},
         )
+        logado = self._controlador_sistema.consumidor_logado
+        if logado and logado.id == id_consumidor:
+            logado.penalidade = total_penalidades
 
-    def desbloquear_consumidor(self, id_consumidor: str):
-        return self._bd.atualizar(
-            id_consumidor,
-            {
-                "status": "ATIVO",
-                "bloqueado_ate": None,
-            },
+    def bloquear_consumidor(self, id_consumidor, bloqueado_ate: datetime):
+        atualizado = self._metodos.atualizar_por_filtro(
+            {"id": id_consumidor},
+            {"bloqueadoAte": bloqueado_ate},
         )
+        logado = self._controlador_sistema.consumidor_logado
+        if logado and logado.id == id_consumidor:
+            logado.bloqueadoAte = bloqueado_ate
+        return atualizado
+
+    def desbloquear_consumidor(self, id_consumidor):
+        atualizado = self._metodos.atualizar_por_filtro(
+            {"id": id_consumidor},
+            {"bloqueadoAte": None},
+        )
+        logado = self._controlador_sistema.consumidor_logado
+        if logado and logado.id == id_consumidor:
+            logado.bloqueadoAte = None
+        return atualizado
 
 #Feito por matheus

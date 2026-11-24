@@ -199,10 +199,10 @@ class TelaExplorar:
             return ("atualizar", None)
         if event == "-NAV_RESERVAS-":
             return ("reservas", None)
-        if event == "-NAV_PERFIL-":
-            return ("perfil", None)
         if event == "-NAV_IMPACTO-":
             return ("impacto", None)
+        if event == "-NAV_PERFIL-":
+            return ("em_breve", None)
         return ("voltar", None)
 
     def mostra_mensagem(self, msg: str):

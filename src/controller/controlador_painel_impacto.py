@@ -14,21 +14,18 @@ class ControladorPainelImpacto:
         if consumidor is None:
             consumidor = self.__controlador_sistema.consumidor_logado
         if consumidor is None:
-            return "menu"
+            return None
 
         consumidor_id = self.obter_id_consumidor(consumidor)
         dados = self.calcular_impacto(consumidor_id)
         evento = self.__tela.mostrar_painel(dados)
 
-        if evento == "-NAV_EXPLORAR-":
-            return "explorar"
-        if evento == "-NAV_RESERVAS-":
-            return "reservas"
-        if evento == "-NAV_PERFIL-":
-            return "perfil"
-        if evento == "-NAV_IMPACTO-" or evento == "-BARRA_NIVEL-":
-            return "impacto"
-        return "menu"
+        mapa_abas = {
+            "-NAV_EXPLORAR-": "explorar",
+            "-NAV_RESERVAS-": "reservas",
+            "-NAV_IMPACTO-": "impacto",
+        }
+        return mapa_abas.get(evento)
 
     def calcular_impacto(self, consumidor_id) -> dict:
         todas_reservas = self.listar_colecao(self._db_reservas)

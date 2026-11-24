@@ -349,8 +349,6 @@ class ControladorOfertaRelampago():
                 return "menu"
             if acao == "reservas":
                 return "reservas"
-            if acao == "perfil":
-                return "perfil"
             if acao == "impacto":
                 return "impacto"
             if acao == "em_breve":

@@ -129,12 +129,12 @@ class ControladorReservas():
         if consumidor is None:
             return None
 
-        # RF16: impedir que consumidores bloqueados realizem novas reservas
-        if consumidor.bloqueadoAte and datetime.now() < consumidor.bloqueadoAte:
-            self._tela_reserva.mostra_mensagem(
-                f"Sua conta está bloqueada até {consumidor.bloqueadoAte.strftime('%d/%m/%Y %H:%M')} e não pode realizar reservas."
-            )
-            return None
+        if self._controlador_sistema.controlador_penalidade.          verificar_bloqueio_ativo(consumidor.id):
+          data_fmt = consumidor.bloqueadoAte.strftime("%d/%m/%Y %H:%M") if consumidor.bloqueadoAte else ""
+          self._tela_reserva.mostra_mensagem(
+              f"Sua conta está bloqueada até {data_fmt} por penalidades acumuladas e não pode realizar reservas."
+          )
+          return None
 
         self.recarregar_reservas()
         ctrl_of = self._controlador_sistema.controlador_oferta
@@ -408,9 +408,6 @@ class ControladorReservas():
             elif acao == "explorar":
                 self._continua = False
                 return "explorar"
-            elif acao == "perfil":
-                self._continua = False
-                return "perfil"
             elif acao == "impacto":
                 self._continua = False
                 return "impacto"
@@ -480,7 +477,10 @@ class ControladorReservas():
                 )
             tela.mostra_mensagem("Erro: Token inválido ou expirado.")
 
-    def atualizar_status_reserva(self, id_reserva: str, novo_status: str):
-        return self._metodos.atualizar(id_reserva, {"status": novo_status})
+    def atualizar_status_reserva(self, id_reserva, novo_status: str, id_consumidor=None):
+      filtro = {"id": id_reserva}
+      if id_consumidor is not None:
+          filtro["consumidor_id"] = id_consumidor
+      return self._metodos.atualizar_por_filtro(filtro, {"status": novo_status})
     #Feito por Gabriel
 # feito por matheus

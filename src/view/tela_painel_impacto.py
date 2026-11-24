@@ -77,10 +77,10 @@ class TelaPainelImpacto:
         comida_fmt = f"{dados['comida_salva_kg']:.1f} kg".replace(".", ",")
 
         card_economia = self._criar_card_metrica(
-        "💰","Economia Total", economia_fmt, "em ofertas resgatadas"
+            "R$", "Economia Total", economia_fmt, "em ofertas resgatadas"
         )
         card_resgates = self._criar_card_metrica(
-        "🛍️", "Ofertas Resgatadas", str(dados["total_resgates"]), f"≈ {comida_fmt} salvos"
+            "#", "Ofertas Resgatadas", str(dados["total_resgates"]), f"≈ {comida_fmt} salvos"
         )
 
         card_gamificacao = sg.Frame(

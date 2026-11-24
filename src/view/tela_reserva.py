@@ -99,10 +99,10 @@ class TelaReserva:
             return ("explorar", None)
         if event == "-NAV_RESERVAS-":
             return ("atualizar", None)
-        if event == "-NAV_PERFIL-":
-            return ("perfil", None)
         if event == "-NAV_IMPACTO-":
             return ("impacto", None)
+        if event == "-NAV_PERFIL-":
+            return ("em_breve", None)
         return ("voltar", None)
 
     def mostra_reserva_detalhes(self, dados_reserva):

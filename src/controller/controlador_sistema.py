@@ -57,6 +57,10 @@ class ControladorSistema:
         return self._controlador_penalidade
 
     @property
+    def controlador_consumidor(self):
+        return self._controlador_consumidor
+
+    @property
     def controlador_painel_impacto(self):
         return self._controlador_painel_impacto
 
