@@ -199,7 +199,9 @@ class TelaExplorar:
             return ("atualizar", None)
         if event == "-NAV_RESERVAS-":
             return ("reservas", None)
-        if event in ("-NAV_IMPACTO-", "-NAV_PERFIL-"):
+        if event == "-NAV_PERFIL-":
+            return ("perfil", None)
+        if event == "-NAV_IMPACTO-":
             return ("em_breve", None)
         return ("voltar", None)
 

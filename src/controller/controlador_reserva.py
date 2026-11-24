@@ -408,6 +408,9 @@ class ControladorReservas():
             elif acao == "explorar":
                 self._continua = False
                 return "explorar"
+            elif acao == "perfil":
+                self._continua = False
+                return "perfil"
             elif acao == "atualizar":
                 continue
             elif acao == "em_breve":

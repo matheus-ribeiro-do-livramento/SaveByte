@@ -94,6 +94,63 @@ class TelaConsumidor:
                 return 1
             if event in ("-EXPLORAR-", "-NAV_EXPLORAR-"):
                 return 2
-            if event in ("-NAV_IMPACTO-", "-NAV_PERFIL-"):
+            if event == "-NAV_PERFIL-":
                 return 3
+            if event == "-NAV_IMPACTO-":
+                return 4
             return 0
+
+    def perfil_consumidor(self, consumidor):
+        localizacao = consumidor.localizacao
+        layout = [
+            *cabecalho_savebyte("Meu perfil", "Gerencie seus dados pessoais e sua localização."),
+            [sg.Frame("", [
+                [sg.Text("👤", font=("Helvetica", 24), background_color=COR_CARD)],
+                [sg.Text(consumidor.nome, font=("Helvetica", 14, "bold"), text_color=COR_TEXTO, background_color=COR_CARD)],
+                [sg.Text(consumidor.email, font=("Helvetica", 9), text_color=COR_TEXTO_SEC, background_color=COR_CARD)],
+            ], background_color=COR_CARD, relief=sg.RELIEF_SOLID, expand_x=True, pad=(4, 8))],
+            [sg.Text("Nome completo", font=("Helvetica", 9, "bold"))],
+            [sg.Input(consumidor.nome, key="-NOME-", size=(44, 1))],
+            [sg.Text("E-mail", font=("Helvetica", 9, "bold"))],
+            [sg.Input(consumidor.email, key="-EMAIL-", size=(44, 1))],
+            [sg.Text("Endereço", font=("Helvetica", 9, "bold"))],
+            [sg.Input(localizacao.endereco, key="-ENDERECO-", size=(44, 1))],
+            [sg.Text("Bairro", font=("Helvetica", 9, "bold")), sg.Push(), sg.Text("Cidade", font=("Helvetica", 9, "bold"))],
+            [sg.Input(localizacao.bairro, key="-BAIRRO-", size=(20, 1)), sg.Push(), sg.Input(localizacao.cidade, key="-CIDADE-", size=(20, 1))],
+            [sg.Text("Nova senha", font=("Helvetica", 9, "bold"))],
+            [sg.Input(key="-SENHA-", password_char="*", size=(44, 1), tooltip="Deixe em branco para manter a senha atual")],
+            [botao_verde("Salvar alterações", "-SALVAR-", size=(38, 1))],
+            [sg.Button("← Voltar ao menu", key="-VOLTAR-", button_color=(COR_TEXTO_SEC, "#FAF9F0"), border_width=0)],
+            nav_consumidor("perfil")
+        ]
+
+        window = sg.Window("SaveByte - Meu Perfil", layout, size=(450, 700))
+        while True:
+            event, values = window.read()
+            if event in (sg.WIN_CLOSED, "-VOLTAR-"):
+                window.close()
+                return "menu"
+            if event == "-NAV_EXPLORAR-":
+                window.close()
+                return "explorar"
+            if event == "-NAV_RESERVAS-":
+                window.close()
+                return "reservas"
+            if event == "-NAV_IMPACTO-":
+                window.close()
+                return "impacto"
+            if event == "-NAV_PERFIL-":
+                continue
+            if event == "-SALVAR-":
+                dados = {
+                    "nome": values["-NOME-"].strip(),
+                    "email": values["-EMAIL-"].strip(),
+                    "endereco": values["-ENDERECO-"].strip(),
+                    "bairro": values["-BAIRRO-"].strip(),
+                    "cidade": values["-CIDADE-"].strip(),
+                    "senha": values["-SENHA-"].strip(),
+                }
+                if all(dados[campo] for campo in ("nome", "email", "endereco", "bairro", "cidade")):
+                    window.close()
+                    return {"acao": "editar", "dados": dados}
+                sg.popup_error("Nome, e-mail e localização são obrigatórios!", title="SaveByte")

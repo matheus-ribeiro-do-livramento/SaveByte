@@ -141,11 +141,13 @@ class ControladorConsumidor:
                 lista_opcoes[opcao]()   
 
     def _navegar_abas(self, aba_atual):
-        while aba_atual in ("explorar", "reservas"):
+        while aba_atual in ("explorar", "reservas", "perfil"):
             if aba_atual == "explorar":
                 aba_atual = self._controlador_sistema.controlador_oferta.abre_tela_explorar()
             elif aba_atual == "reservas":
                 aba_atual = self._controlador_sistema.controlador_reservas.abre_tela()
+            elif aba_atual == "perfil":
+                aba_atual = self.perfil_consumidor()
 
     def minhas_reservas(self):
         self._navegar_abas("reservas")
@@ -155,6 +157,43 @@ class ControladorConsumidor:
 
     def em_breve(self):
         self._tela_consumidor.mensagem("Funcionalidade em desenvolvimento.")
+
+    def perfil_consumidor(self):
+        consumidor = self._controlador_sistema.consumidor_logado
+        if consumidor is None:
+            return "menu"
+
+        resultado = self._tela_consumidor.perfil_consumidor(consumidor)
+        if not isinstance(resultado, dict):
+            return resultado
+
+        dados = resultado["dados"]
+        documento_existente = self._metodos.buscar_um({
+            "email": dados["email"],
+            "id": {"$ne": consumidor.id},
+        })
+        if documento_existente:
+            self._tela_consumidor.mensagem("Erro: este e-mail já está em uso.")
+            return "perfil"
+
+        novos_dados = {
+            "nome": dados["nome"],
+            "email": dados["email"],
+            "senha": dados["senha"] or consumidor.senha,
+            "localizacao": {
+                "cidade": dados["cidade"],
+                "bairro": dados["bairro"],
+                "endereco": dados["endereco"],
+            },
+        }
+        if self.atualizar_consumidor(consumidor, novos_dados):
+            consumidor_atualizado = self._metodos.buscar_um({"id": consumidor.id})
+            consumidor_atualizado = self._documento_para_consumidor(consumidor_atualizado)
+            self._controlador_sistema.definir_consumidor_logado(consumidor_atualizado)
+            self._tela_consumidor.mensagem("Perfil atualizado com sucesso!")
+        else:
+            self._tela_consumidor.mensagem("Não foi possível atualizar o perfil.")
+        return "perfil"
 
     def interface_consumidor(self):
         continua_menu = True
@@ -167,13 +206,21 @@ class ControladorConsumidor:
         lista_opcoes = {
             1: self.minhas_reservas,
             2: self.explorar_ofertas,
-            3: self.em_breve,
+            3: self.perfil_consumidor,
+            4: self.em_breve,
             0: sair_da_conta,
         }
         while continua_menu:
             opcao = self._tela_consumidor.tela_opcoes()
             if opcao in lista_opcoes:
-                lista_opcoes[opcao]()
+                resultado = lista_opcoes[opcao]()
+                if opcao == 3:
+                    if resultado == "explorar":
+                        self.explorar_ofertas()
+                    elif resultado == "reservas":
+                        self.minhas_reservas()
+                    elif resultado == "impacto":
+                        self.em_breve()
             else:
                 self._tela_consumidor.mensagem("Opção inválida.")
 
